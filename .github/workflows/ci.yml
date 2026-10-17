@@ -3,8 +3,9 @@
 # (Actions tab -> CI -> "Run workflow", or `gh workflow run ci.yml --ref <branch>`).
 # See `.agents/skills/git-workflow/SKILL.md` ("Local checks" and "CI/CD status").
 #
-# `check` is not yet a required status check on the branch ruleset; the owner adds
-# it once it has gone green on a pull request.
+# `check` is a required status check on the `permanent-branches` ruleset for main,
+# staging and dev, so renaming this job or workflow breaks merging: update the ruleset
+# (`.agents/skills/git-workflow/reference/ruleset.json`) in the same change.
 
 name: CI
 

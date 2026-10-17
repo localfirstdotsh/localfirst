@@ -19,8 +19,8 @@ active one.
 
 **GitHub Actions CI runs on every pull request and push to `main`, `staging` and `dev`**
 (`.github/workflows/ci.yml`: `pnpm check` plus the packed-tarball smoke test on Linux, Node 22). Its
-`check` job is not yet a *required* status check, so still run the local checks before opening a PR and
-report what CI shows honestly.
+`check` job is a **required status check** on those branches, and a branch must be up to date with its base
+before it can merge. Still run the local checks before opening a PR, and report what CI shows honestly.
 
 `pnpm install --frozen-lockfile`, then `pnpm check` (= `pnpm build:contracts && pnpm -r typecheck &&
 pnpm -r build && pnpm -r test`), or the filtered form for the package you touched:
