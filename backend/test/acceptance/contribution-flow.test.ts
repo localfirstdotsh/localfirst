@@ -254,7 +254,7 @@ describe('opt-in contribution flow', () => {
       'Please explain the charge', // fixture prompt text
       'Return a JSON object', // system prompt
       'private_note',
-      '4242', // model output
+      'customer 4242', // model output (the whole phrase: bare digits also occur in measured numbers)
       '"eval_duration"',
       '"eval_count"',
       '"load_duration"',
@@ -278,7 +278,7 @@ describe('opt-in contribution flow', () => {
     expect(plan.model.artifact_identity).toEqual(build!.payload.model_bindings[0]!.artifact_identity);
     // The stored report never holds raw output either.
     const [report] = await reportRows(contributor);
-    expect(JSON.stringify(report!.payload)).not.toContain('4242');
+    expect(JSON.stringify(report!.payload)).not.toContain('customer 4242');
   });
 
   it('[C4] publication needs a human approval of the exact projection; an operator accepts; evidence appears only then', async () => {
