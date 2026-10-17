@@ -214,17 +214,17 @@ so restoring CI restores checks only. Do not describe any merge as deploying any
 
 ## GitHub protection (current status)
 
-`localfirstdotsh/localfirst` is a public repo, so rulesets are available, but **none are applied until
-the owner applies them**. Until then the rules above are enforced by convention and by `guard.sh`.
+`localfirstdotsh/localfirst` is a public repo with the ruleset **`permanent-branches` active** on `main`,
+`staging` and `dev` (applied by the owner, 2026-10-17). It blocks deleting them, blocks non-fast-forward
+(force) pushes, and requires a pull request with no bypass actors, so even the owner cannot push to them
+directly. Only **merge commits** are allowed for PRs into these branches, because promotions must keep
+the three histories related. Review count is 0 (a solo owner can merge), and **no status check is
+required** while CI is suspended.
 
-`reference/ruleset.json` holds the intended ruleset for all three branches — require a pull request,
-block force pushes, block deletions, no bypass actors. Apply it in one command:
+`reference/ruleset.json` is the intended ruleset including the `check` status check. To restore it as
+step 5 of "Restoring CI/CD" above, edit the live ruleset to add the `check` required status check:
 
 ```sh
-gh api -X POST repos/localfirstdotsh/localfirst/rulesets \
-  --input .agents/skills/git-workflow/reference/ruleset.json
+gh api repos/localfirstdotsh/localfirst/rulesets                # find the id of permanent-branches
+gh api -X PUT repos/localfirstdotsh/localfirst/rulesets/<id> --input .agents/skills/git-workflow/reference/ruleset.json
 ```
-
-Note that the file also lists `check` as a required status check. **While CI is suspended, strip the
-`required_status_checks` rule before applying it**, or the ruleset will block every PR on a check
-that never reports. Restore that rule as step 5 of "Restoring CI/CD" above.
