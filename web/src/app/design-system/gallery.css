@@ -1,0 +1,16 @@
+.gallery-inline { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.gallery-colors { display: grid; grid-template-columns: repeat(auto-fit, minmax(var(--width-check-status), 1fr)); gap: var(--space-4); }
+.gallery-swatch { display: block; height: var(--space-12); border: var(--space-px) solid var(--border); border-radius: var(--radius); }
+.swatch-bg { background: var(--bg); }
+.swatch-card { background: var(--card); }
+.swatch-fg { background: var(--fg); }
+.swatch-fg-muted { background: var(--fg-muted); }
+.swatch-border { background: var(--border); }
+.swatch-code { background: var(--code); }
+.swatch-accent { background: var(--accent); }
+.swatch-link { background: var(--link); }
+.swatch-warn { background: var(--warn); }
+.swatch-error { background: var(--error); }
+.swatch-success { background: var(--success); }
+.gallery-spacing { display: flex; align-items: center; }
+.gallery-spacing > span { width: var(--space-2); height: var(--space-4); background: var(--accent); }

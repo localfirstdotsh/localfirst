@@ -1,0 +1,2 @@
+{"error":"model 'does-not-exist:1b' not found"}
+HTTP 404

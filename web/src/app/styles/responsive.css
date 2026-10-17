@@ -1,0 +1,31 @@
+@media (max-width: 1100px) {
+  .site-header .container { gap: 24px; }
+  .nav { gap: 20px; }
+  .discovery-toolbar { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+}
+@media (max-width: 800px) {
+  .site-header .container { flex-wrap: wrap; gap: 0 16px; min-height: 64px; padding-block: 12px; }
+  .site-header .mobile-menu-button { display: inline-flex; }
+  .nav { display: none; flex: 1 0 100%; order: 3; gap: 8px; padding-top: 12px; }
+  .nav[data-open='true'] { display: flex; flex-wrap: wrap; }
+  .nav a { padding: 10px 12px; min-height: 44px; }
+  .header-actions .connect-action { display: none; }
+  .hero, .getting-started { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .hero h1 { max-width: 12ch; }
+  .hero-description { max-width: 60ch; }
+  .hero-description a { margin-top: 12px; }
+  .home { padding-top: 40px; }
+}
+@media (max-width: 450px) {
+  .site-header .container { gap: 0 12px; }
+  .header-actions { gap: 8px; }
+  .brand { font-size: 16px; gap: 8px; }
+  .header-actions .button-small { padding-inline: 10px; }
+  .hero h1 { font-size: var(--text-hero); }
+  .hero-subtitle { margin-top: 20px; }
+  .hero-description { font-size: 14px; }
+  .command-line { padding-left: 10px; gap: 8px; }
+  .command-prompt { display: none; }
+  .command-line .button { padding: 0 12px; min-height: 40px; font-size: 13px; }
+  .page-top { padding-top: 28px; }
+}

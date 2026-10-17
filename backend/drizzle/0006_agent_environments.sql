@@ -1,0 +1,10 @@
+ALTER TABLE "project_version_files" DROP CONSTRAINT "project_version_files_kind_check";--> statement-breakpoint
+ALTER TABLE "test_definitions" ALTER COLUMN "model_role" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "project_version_tests" ALTER COLUMN "model_role" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "test_definitions" ADD COLUMN "environment_key" text;--> statement-breakpoint
+ALTER TABLE "test_definitions" ADD COLUMN "environment_digest" text;--> statement-breakpoint
+ALTER TABLE "project_version_tests" ADD COLUMN "environment_key" text;--> statement-breakpoint
+ALTER TABLE "project_version_tests" ADD COLUMN "environment_digest" text;--> statement-breakpoint
+ALTER TABLE "test_definitions" ADD CONSTRAINT "test_definitions_role_profile_check" CHECK (("test_definitions"."harness" = 'declarative_workflow_v1' and "test_definitions"."model_role" is null and "test_definitions"."environment_key" is not null and "test_definitions"."environment_digest" is not null and "test_definitions"."environment_digest" ~ '^sha256:[0-9a-f]{64}$') or ("test_definitions"."harness" <> 'declarative_workflow_v1' and "test_definitions"."model_role" is not null and "test_definitions"."environment_key" is null and "test_definitions"."environment_digest" is null));--> statement-breakpoint
+ALTER TABLE "project_version_files" ADD CONSTRAINT "project_version_files_kind_check" CHECK ("project_version_files"."kind" in ('test_manifest', 'fixture', 'other', 'environment_manifest', 'prompt'));--> statement-breakpoint
+ALTER TABLE "project_version_tests" ADD CONSTRAINT "project_version_tests_role_profile_check" CHECK (("project_version_tests"."harness" = 'declarative_workflow_v1' and "project_version_tests"."model_role" is null and "project_version_tests"."environment_key" is not null and "project_version_tests"."environment_digest" is not null and "project_version_tests"."environment_digest" ~ '^sha256:[0-9a-f]{64}$') or ("project_version_tests"."harness" <> 'declarative_workflow_v1' and "project_version_tests"."model_role" is not null and "project_version_tests"."environment_key" is null and "project_version_tests"."environment_digest" is null));

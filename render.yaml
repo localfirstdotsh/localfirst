@@ -1,0 +1,185 @@
+# Render Blueprint for Localfirst (BACKEND_PRD section 22, backend/docs/RUNBOOK.md
+# "Staging on Render"). One project, `localfirst`, with an environment per
+# stage. Nothing is shared between environments: each gets its own services,
+# environment group, secrets, database, GitHub OAuth app, and domain, and
+# network isolation keeps their private networks apart.
+#
+# Create it in Render with New -> Blueprint, choosing this repository and the
+# `staging` branch. Render prompts once for every `sync: false` value: enter
+# them there, never in this file. Values with `generateValue` are created by
+# Render and never leave it.
+
+projects:
+  - name: localfirst
+    environments:
+      - name: staging
+        networking:
+          isolation: enabled
+        envVarGroups:
+          - name: localfirst-staging
+            envVars:
+              # Production mode, so staging enforces production's configuration checks.
+              - key: NODE_ENV
+                value: production
+              - key: LOG_LEVEL
+                value: info
+              # Cloudflare in front of Render's private load balancer
+              # (backend/src/http/client-ip.ts). Confirm Render's proxy addresses on
+              # the first deploy and narrow `private` if they differ. The website must call
+              # this API over Render's private network and forward each visitor's address
+              # (web/.env.example: LOCALFIRST_API_URL, LOCALFIRST_CLIENT_IP_HEADER); otherwise
+              # every website visitor shares one anonymous rate-limit allowance.
+              - key: TRUSTED_PROXIES
+                value: cloudflare,private
+              # The staging origin on the custom domain, for example
+              # https://staging.localfirst.sh. Token audiences, the auth issuer, and
+              # the GitHub callback derive from it, so set it before the first sign-in.
+              - key: API_BASE_URL
+                sync: false
+              # The public website's origin, for example https://staging.localfirst.sh. The
+              # same value is used for API_BASE_URL; all browser pages live in web/.
+              - key: WEBSITE_URL
+                sync: false
+              # Neon project `localfirstdotsh-staging`, POOLED connection string.
+              - key: DATABASE_URL
+                sync: false
+              # Signs sessions and encrypts the stored signing keys. Generated once by
+              # Render; it must stay stable, so never regenerate it casually.
+              - key: AUTH_SECRET
+                generateValue: true
+              - key: METRICS_TOKEN
+                generateValue: true
+              # A GitHub OAuth app for staging only, with the callback URL
+              # <API_BASE_URL>/api/auth/callback/github.
+              - key: GITHUB_CLIENT_ID
+                sync: false
+              - key: GITHUB_CLIENT_SECRET
+                sync: false
+
+        services:
+          - type: web
+            name: localfirst-staging-api
+            runtime: docker
+            region: ohio # next to Neon's AWS us-east-2
+            plan: starter
+            branch: staging
+            dockerfilePath: ./backend/Dockerfile
+            dockerContext: .
+            # Exactly one migration run per release, before the new API takes traffic.
+            preDeployCommand: node dist/db/migrate.js
+            # Ready means the database and its tables are reachable, so a deploy with a
+            # broken database setting never takes traffic.
+            healthCheckPath: /health/ready
+            maxShutdownDelaySeconds: 30
+            autoDeployTrigger: commit
+            buildFilter:
+              paths:
+                - backend/**
+                - packages/contracts/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - .npmrc
+                - .dockerignore
+                - render.yaml
+              ignoredPaths:
+                - backend/test/**
+                - backend/docs/**
+            envVars:
+              - fromGroup: localfirst-staging
+              # Neon DIRECT connection string: migrations bypass the pooler. Only the
+              # pre-deploy step uses it.
+              - key: MIGRATION_DATABASE_URL
+                sync: false
+
+          # The public website (web/Dockerfile). It holds no secrets and is not given the
+          # environment group, which carries the database credentials and session secret.
+          # It reaches the API over Render's private network and forwards each visitor's
+          # address, so the API's rate limits apply per visitor (web/.env.example).
+          - type: web
+            name: localfirst-staging-web
+            runtime: docker
+            region: ohio
+            plan: starter
+            branch: staging
+            dockerfilePath: ./web/Dockerfile
+            dockerContext: .
+            # Liveness only: it makes no call to the API, so an API outage never restarts a
+            # healthy website (which shows its own "registry unavailable" states instead).
+            healthCheckPath: /health
+            maxShutdownDelaySeconds: 30
+            autoDeployTrigger: commit
+            buildFilter:
+              paths:
+                - web/**
+                - packages/contracts/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - .npmrc
+                - .dockerignore
+                - render.yaml
+              ignoredPaths:
+                - web/e2e/**
+                - web/**/*.test.ts
+                - web/**/*.test.tsx
+            envVars:
+              # The API's PRIVATE address, `http://localfirst-staging-api:<port>` (the host and
+              # port are on the API service's Connect menu). Calls from here must arrive over the
+              # private network: through the public proxied address the proxy would append this
+              # service's own address to the visitor chain and every visitor would look the same.
+              - key: LOCALFIRST_API_URL
+                sync: false
+              # The public WEBSITE origin, equal to API_BASE_URL and WEBSITE_URL. API/auth/MCP
+              # requests are proxied at runtime; browser pages stay on this origin.
+              - key: LOCALFIRST_PUBLIC_API_URL
+                sync: false
+              # This website's public origin, the same value as WEBSITE_URL. Used for canonical
+              # URLs and the sitemap.
+              - key: LOCALFIRST_SITE_URL
+                sync: false
+              # The header Cloudflare sets with the visitor's address. Cloudflare overwrites it, so a
+              # visitor cannot choose it. Leave the proxy on, or this value is untrustworthy.
+              - key: LOCALFIRST_CLIENT_IP_HEADER
+                value: cf-connecting-ip
+              # Setup instructions appear only when the CLI is released and tested. Until then
+              # the site says it is not available yet. Do not set these early:
+              #   LOCALFIRST_CLI_RELEASED, LOCALFIRST_CLI_VERSION,
+              #   LOCALFIRST_CLI_SETUP_COMMAND, LOCALFIRST_TESTED_CLIENTS
+
+          - type: worker
+            name: localfirst-staging-worker
+            runtime: docker
+            region: ohio
+            plan: starter
+            branch: staging
+            dockerfilePath: ./backend/Dockerfile
+            dockerContext: .
+            dockerCommand: node dist/jobs/worker.js
+            maxShutdownDelaySeconds: 30
+            autoDeployTrigger: commit
+            buildFilter:
+              paths:
+                - backend/**
+                - packages/contracts/**
+                - package.json
+                - pnpm-lock.yaml
+                - pnpm-workspace.yaml
+                - .npmrc
+                - .dockerignore
+                - render.yaml
+              ignoredPaths:
+                - backend/test/**
+                - backend/docs/**
+            envVars:
+              - fromGroup: localfirst-staging
+
+      # Production is created empty and protected. Its services, database
+      # (a separate Neon project), OAuth app, and domain are added in their own
+      # reviewed change once they exist, deploying from `main`. Defining them
+      # earlier would make Render deploy production with no database.
+      - name: production
+        networking:
+          isolation: enabled
+        permissions:
+          protection: enabled

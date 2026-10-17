@@ -1,0 +1,18 @@
+# Keep the build context to source and manifests. Never send local secrets.
+**/.env
+**/.env.*
+!**/.env.example
+**/node_modules
+**/dist
+.git
+**/coverage
+**/*.log
+backend/test
+runner/src
+runner/test
+docs
+
+# Build output and test artifacts of the website.
+**/.next
+**/playwright-report
+**/test-results

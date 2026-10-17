@@ -1,0 +1,53 @@
+{
+  "models": [
+    {
+      "type": "llm",
+      "publisher": "google",
+      "key": "google/gemma-3-1b",
+      "display_name": "Gemma 3 1B",
+      "architecture": "gemma3_text",
+      "quantization": {
+        "name": "4bit",
+        "bits_per_weight": 4
+      },
+      "size_bytes": 771933305,
+      "params_string": "1B",
+      "loaded_instances": [
+        {
+          "id": "google/gemma-3-1b",
+          "config": {
+            "context_length": 8192,
+            "parallel": 4,
+            "reasoning_budget_message": ""
+          }
+        }
+      ],
+      "max_context_length": 32768,
+      "format": "mlx",
+      "capabilities": {
+        "vision": false,
+        "trained_for_tool_use": false
+      },
+      "description": null,
+      "variants": [
+        "google/gemma-3-1b@4bit"
+      ],
+      "selected_variant": "google/gemma-3-1b@4bit"
+    },
+    {
+      "type": "embedding",
+      "publisher": "nomic-ai",
+      "key": "text-embedding-nomic-embed-text-v1.5",
+      "display_name": "Nomic Embed Text v1.5",
+      "quantization": {
+        "name": "Q4_K_M",
+        "bits_per_weight": 4
+      },
+      "size_bytes": 84106624,
+      "params_string": null,
+      "loaded_instances": [],
+      "max_context_length": 2048,
+      "format": "gguf"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+/* Filters: always open and inline on wide screens, a disclosure on narrow ones */
+.filters-summary { display: none; list-style: none; cursor: pointer; min-height: var(--control-height); align-items: center; padding: 0 var(--space-4); border: var(--space-px) solid var(--border); border-radius: var(--radius); background: var(--card); font-weight: var(--weight-medium); }
+.filters-summary::-webkit-details-marker { display: none; }
+.filters-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-1); }
+.filters-cancel { display: none; }
+@media (max-width: 899px) {
+  .filter-rail { flex-basis: 100%; width: 100%; }
+  .filters-summary { display: flex; }
+  .filters[open] > .filters-summary { margin-bottom: var(--space-3); }
+  .filters-body { display: grid; gap: var(--space-1) var(--space-6); grid-template-columns: repeat(auto-fit, minmax(var(--width-form-column), 1fr)); }
+  .filters-cancel { display: inline-flex; }
+}

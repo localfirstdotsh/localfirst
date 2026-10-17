@@ -1,0 +1,17 @@
+/* Import once at the root; order preserves the established cascade. */
+@import '../design-system/tokens.css';
+@import './styles/base.css';
+@import '../components/layout/layout.css';
+@import '../components/ui/controls.css';
+@import '../components/composites/composites.css';
+@import '../features/catalog/catalog.css';
+@import './styles/patterns.css';
+@import '../features/projects/markdown.css';
+@import '../features/catalog/filters.css';
+@import '../features/projects/projects.css';
+@import '../features/account/account.css';
+@import '../features/review/review.css';
+@import '../features/auth/auth.css';
+@import '../features/docs/docs.css';
+@import './styles/home.css';
+@import './styles/responsive.css';

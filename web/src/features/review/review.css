@@ -1,0 +1,8 @@
+.review-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); align-items: start; }
+.review-content, .review-decision { min-width: 0; }
+.review-decision .browser-actions > * { flex: 1 1 100%; }
+.review-ack { align-items: flex-start; }
+.review-warning-detail { display: block; }
+@media (min-width: 900px) {
+  .review-grid { grid-template-columns: minmax(0, 1.1fr) minmax(var(--width-definition-value), 1fr); }
+}

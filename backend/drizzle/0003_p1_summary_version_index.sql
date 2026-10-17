@@ -1,0 +1,1 @@
+CREATE INDEX "compatibility_summaries_version_idx" ON "compatibility_summaries" USING btree ("project_version_id");

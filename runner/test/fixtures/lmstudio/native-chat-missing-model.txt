@@ -1,0 +1,9 @@
+{
+  "error": {
+    "message": "Invalid model identifier \"nope/missing\". Please specify a valid downloaded model (e.g., google/gemma-3-1b@4bit, google/gemma-3-1b, gemma-3-1b-it-qat).",
+    "type": "invalid_request",
+    "param": "model",
+    "code": "model_not_found"
+  }
+}
+HTTP 404

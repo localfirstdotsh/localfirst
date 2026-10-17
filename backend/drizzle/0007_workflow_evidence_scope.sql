@@ -1,0 +1,2 @@
+ALTER TABLE "compatibility_summaries" DROP CONSTRAINT "compatibility_summaries_scope_check";--> statement-breakpoint
+ALTER TABLE "compatibility_summaries" ADD CONSTRAINT "compatibility_summaries_scope_check" CHECK ("compatibility_summaries"."scope" in ('component', 'workflow', 'manual'));

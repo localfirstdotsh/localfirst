@@ -1,0 +1,5 @@
+.browser-identity, .browser-permissions { min-width: 0; overflow-wrap: anywhere; }
+
+.page-width-auth { max-width:28rem; margin:48px auto; padding:32px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); }
+.page-width-auth .page-header, .page-width-auth .security-note { text-align:center; }
+@media(max-width:599px) { .page-width-auth { width:calc(100% - 32px); padding:24px; margin-block:32px; } }

@@ -1,0 +1,33 @@
+# Author and publish a project
+
+A project is `PROJECT.md`: YAML frontmatter plus a Markdown body. The frontmatter is parsed
+defensively: no anchors, aliases, custom tags or merge keys, bounded nesting, and timestamps must
+be quoted strings.
+
+## Workflow
+
+1. **Inspect with permission.** Read only the project files and hardware notes the user has
+   authorised. Propose the spec; mark unknown or conflicting facts as unknown.
+2. **Read the live schema** (see SKILL.md) and the closest published project through `project_get`.
+3. **Create the draft** with `contribution_create_draft`: either the `PROJECT.md` and files
+   directly, or a bounded import descriptor for a public GitHub source. Pass an idempotency key.
+   The result carries the draft ID, revision and a review URL.
+4. **Validate.** `draft_validate` with the current `expected_revision`. Fix every issue with
+   `draft_update`, which returns a new revision and digest. Validation only inspects; nothing runs.
+5. **Hand over for approval.** Give the user the review URL, or tell them to run
+   `localfirstdotsh contribution review <draft-id>` and `contribution approve <draft-id>` in their
+   own terminal. Wait. Do not poll for approval in a loop and do not ask the user to approve on your
+   behalf.
+6. **Publish.** `contribution_publish` with the draft ID, approval ID, revision, digest and a new
+   idempotency key. Approval is single use and short lived; if it has expired or the revision
+   changed, return to step 5.
+
+## Rules
+
+- Versions are immutable. A change is a new version, and a derived work is a new project through
+  `project_create_derivative_draft`, with attribution and no inherited evidence.
+- Do not claim a test result in the spec's `evidence` field. Evidence comes from submitted,
+  operator-reviewed reports.
+- Every limitation the validator warns about needs the user's explicit acknowledgement at approval.
+- Scopes: drafts need `projects:draft`, publishing `projects:publish`, updates `projects:update`.
+  Request the minimum for the operation.

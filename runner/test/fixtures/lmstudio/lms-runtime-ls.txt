@@ -1,0 +1,6 @@
+LLM ENGINE                                        SELECTED    MODEL FORMAT
+llama.cpp-mac-arm64-apple-metal-advsimd@2.51.0       ✓            GGUF    
+llama.cpp-mac-arm64-apple-metal-advsimd@2.27.1                    GGUF    
+llama.cpp-mac-arm64-apple-metal-advsimd@2.25.2                    GGUF    
+mlx-llm-mac-arm64-apple-metal-advsimd@1.11.0         ✓            MLX     
+mlx-llm-mac-arm64-apple-metal-advsimd@1.10.1                      MLX     

@@ -1,0 +1,54 @@
+{
+  "cloud": {
+    "tags": {
+      "name": "gpt-oss:120b-cloud",
+      "model": "gpt-oss:120b-cloud",
+      "remote_model": "gpt-oss:120b",
+      "remote_host": "https://ollama.com:443",
+      "modified_at": "2026-10-01T00:00:00Z",
+      "size": 384,
+      "digest": "569662207105a7c3ab1a2dc3b3f2d7a5d8a1f5c0e0a4f8c6d1e2b3a4c5d6e7f8",
+      "details": { "parent_model": "", "format": "", "family": "gptoss", "families": ["gptoss"], "parameter_size": "116.8B", "quantization_level": "MXFP4" },
+      "capabilities": ["completion", "tools", "thinking"]
+    },
+    "show": {
+      "remote_model": "gpt-oss:120b",
+      "remote_host": "https://ollama.com:443",
+      "details": { "parent_model": "", "format": "", "family": "gptoss", "families": ["gptoss"], "parameter_size": "116.8B", "quantization_level": "MXFP4" },
+      "capabilities": ["completion", "tools", "thinking"],
+      "model_info": {}
+    }
+  },
+  "unknown": {
+    "tags": {
+      "name": "mystery:latest",
+      "model": "mystery:latest",
+      "modified_at": "2026-10-01T00:00:00Z",
+      "size": 0,
+      "digest": "not-a-digest",
+      "details": { "format": "", "family": "", "families": null, "parameter_size": "", "quantization_level": "" },
+      "capabilities": ["completion"]
+    },
+    "show": {
+      "details": { "format": "", "family": "" },
+      "capabilities": ["completion"],
+      "model_info": {}
+    }
+  },
+  "thinking": {
+    "tags": {
+      "name": "thinker:7b",
+      "model": "thinker:7b",
+      "modified_at": "2026-10-01T00:00:00Z",
+      "size": 4000000000,
+      "digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "details": { "format": "gguf", "family": "think", "families": ["think"], "parameter_size": "7B", "quantization_level": "Q4_K_M", "context_length": 8192 },
+      "capabilities": ["completion", "thinking"]
+    },
+    "show": {
+      "details": { "format": "gguf", "family": "think", "quantization_level": "Q4_K_M" },
+      "capabilities": ["completion", "thinking"],
+      "model_info": { "general.architecture": "think", "think.context_length": 8192 }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+/* Header shares the same container and input modality as the catalog. */
+.site-header { border-bottom: 1px solid var(--border); }
+.site-header .container { display: flex; align-items: center; gap: 36px; min-height: 72px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--fg); font-weight: 650; font-size: 17px; letter-spacing: -.025em; white-space: nowrap; }
+.brand-mark { width: 22px; height: 22px; background: var(--accent); border-radius: var(--radius-sm); display: inline-grid; place-items: center; color: var(--accent-text); font: 600 14px var(--font-mono); }
+.nav { display: flex; gap: 26px; flex: 1; }
+.nav a { color: var(--fg-muted); padding: 24px 0 22px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; transition: color 120ms; }
+.nav a:hover { color: var(--fg); }
+.nav a[aria-current='page'] { color: var(--fg); border-bottom-color: var(--accent); }
+/* Chromium promotes a pointer-focused link to :focus-visible on Shift alone.
+   Preserve the pointer modality until an intentional navigation key is pressed. */
+:root[data-input-modality='pointer'] .site-header :focus-visible { outline: none; }
+.header-actions { display: flex; gap: 12px; align-items: center; margin-left: auto; }
+.site-header .mobile-menu-button { display: none; }
+
+
+.nav a:hover, .brand:hover { text-decoration:none; }
+.nav a:focus-visible { outline-offset:-6px; border-radius:var(--radius); }
+body > .site-header, body > .site-footer { flex-shrink:0; }

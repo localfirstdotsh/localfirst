@@ -1,0 +1,15 @@
+{
+  "database": "localfirst_web_e2e",
+  "apiPort": 8795,
+  "webPort": 3015,
+  "webUnreleasedPort": 3016,
+  "ownerId": "e2e-owner",
+  "strangerId": "e2e-stranger",
+  "ownerProjectSlug": "local-request-labeler",
+  "setupCommand": "npx localfirstdotsh mcp add --client claude-code --registry http://127.0.0.1:3015",
+  "clientCommand": "npx localfirstdotsh mcp add --client claude-code --registry http://127.0.0.1:3015",
+  "apiLimitedPort": 8796,
+  "webForwardingPort": 3018,
+  "limitedCatalogPerMinute": 10,
+  "publicApiOrigin": "https://api.public.example"
+}

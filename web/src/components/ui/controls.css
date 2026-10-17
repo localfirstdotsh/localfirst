@@ -1,0 +1,14 @@
+/* Buttons */
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: var(--radius); border: 1px solid var(--control-border); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.button:hover { text-decoration: none; background: var(--hover); }
+.button-primary:hover { background: var(--accent-pressed); }
+.button-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.button-primary:active { background: var(--accent-pressed); border-color: var(--accent-pressed); }
+.button-small { min-height: 36px; padding: 0 14px; font-size: 14px; }
+
+.control { min-height: var(--control-height); background: var(--card); color: var(--fg); border: var(--space-px) solid var(--control-border); border-radius: var(--radius); padding: 0 var(--space-3-half); font: inherit; min-width: 0; }
+.checkbox-field { display: flex; gap: var(--space-2); align-items: center; min-height: var(--space-8); }
+.button:disabled, .control:disabled, .checkbox-field:has(input:disabled) { opacity: var(--disabled-opacity); cursor: not-allowed; }
+.control[aria-invalid='true'] { border-color: var(--error); }
+.field-error { color: var(--error); }
+.button-danger { color: var(--error); border-color: var(--error); }
