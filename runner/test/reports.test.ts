@@ -158,7 +158,7 @@ describe('exportSanitized', () => {
     const exported = exportSanitized(report, ids);
     expect(testResultSchema.safeParse(exported.payload).success).toBe(true);
     const text = JSON.stringify(exported.payload);
-    expect(text).not.toContain('4242');
+    expect(text).not.toContain('customer text 4242'); // bare digits also occur in measured numbers
     expect(text).not.toContain('private customer text');
     expect(text).not.toContain('eval_duration');
     expect(Object.keys(exported.payload)).not.toContain('case_details');

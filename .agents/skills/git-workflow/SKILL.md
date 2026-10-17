@@ -55,8 +55,8 @@ Git over HTTPS uses `gh auth git-credential`, so one switch covers both `git` an
 2. `git status` + `git diff`: every change must belong to this task. Changes that do not (including
    another agent's in-flight files) are reported and left alone, not committed.
 3. **Run the applicable local checks and record real results** — see "Local checks" below. CI also
-   runs on the PR, but it is not yet a required check, so the local results still go in the PR. A PR
-   opened without them is incomplete.
+   runs on the PR and is required to merge, but the local results still go in the PR. A PR opened
+   without them is incomplete.
 4. Scan for secrets and junk: `.env`, `.env.local`, keys, tokens, `*.log`, `coverage/`, `dist/`,
    `node_modules/`. Never commit them; `.gitignore` is a safety net, not a substitute for looking.
 5. Stage explicit paths only — `git add <paths>`, never `-A` or `.`. Review `git diff --cached --stat`.
@@ -171,7 +171,7 @@ without running anything — use it to sanity-check a destructive-looking comman
 Delete a task branch only after its PR is merged and no worktree still uses it: `git branch -d`
 (never `-D`), and `git worktree remove` first.
 
-## CI/CD status (automated, not yet required)
+## CI/CD status (automated and required)
 
 GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`, `staging` and
 `dev`, and by hand:
@@ -188,25 +188,25 @@ Node 22. It uses read-only repository permissions and no secrets.
 
 Rules to respect:
 
-- **`check` is not yet a required status check** on the `permanent-branches` ruleset. Read what CI
-  reports, fix failures on the task branch (`gh run view --log-failed`), and never claim a result that
-  did not run. Do not re-run just to "get lucky" on a flaky pass.
+- **`check` is a required status check** on the `permanent-branches` ruleset, with the "branch must be up
+  to date" policy on. A PR cannot merge until `check` passes on its latest commit, and when its base moves
+  the branch needs updating (`git merge origin/<base>`, then push) so CI runs again. Read what CI reports,
+  fix failures on the task branch (`gh run view --log-failed`), and never claim a result that did not
+  run. A failure that is not caused by your change is still a failure to report; fix the test.
 - The local checks stay a pre-PR habit: they find problems before a push, and their results go in the PR.
 - Nothing else changes: task branches still cut from `dev` and PR into `dev`, and promotion to
   `staging` or `main` still needs explicit authorization.
 
-### Making `check` required
+### Changing the required check
 
-Once `check` has gone green on a pull request, the owner adds it to the live ruleset (this changes
-repository settings, so it needs the owner's go-ahead):
+The live ruleset is the source of truth; `reference/ruleset.json` is its copy. To change the check (for
+example if the job is renamed), edit the file and apply it to the live ruleset. This changes repository
+settings, so it needs the owner's go-ahead:
 
 ```sh
 gh api repos/localfirstdotsh/localfirst/rulesets                 # find the id of permanent-branches
 gh api -X PUT repos/localfirstdotsh/localfirst/rulesets/<id> --input .agents/skills/git-workflow/reference/ruleset.json
 ```
-
-`reference/ruleset.json` includes the `check` requirement. Open PRs created before the requirement
-need their branch updated so CI reports on them.
 
 Deployment is a separate, later step: no deployment environments or deploy jobs exist in this repo,
 so CI runs checks only. Do not describe any merge as deploying anything.
@@ -217,8 +217,8 @@ so CI runs checks only. Do not describe any merge as deploying anything.
 `staging` and `dev` (applied by the owner, 2026-10-17). It blocks deleting them, blocks non-fast-forward
 (force) pushes, and requires a pull request with no bypass actors, so even the owner cannot push to them
 directly. Only **merge commits** are allowed for PRs into these branches, because promotions must keep
-the three histories related. Review count is 0 (a solo owner can merge), and **no status check is
-required yet** — see "CI/CD status" above for adding `check`.
+the three histories related. Review count is 0 (a solo owner can merge), and the **`check` status check
+is required** (applied 2026-10-17).
 
-`reference/ruleset.json` is the intended ruleset, including the `check` status check; "Making `check`
-required" above gives the command that applies it to the live ruleset.
+`reference/ruleset.json` is a copy of the live ruleset; "Changing the required check" above gives the
+command that applies an edit to it.
