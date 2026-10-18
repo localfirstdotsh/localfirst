@@ -67,16 +67,17 @@ test('mobile navigation opens, follows real routes, and returns focus on Escape'
   await expect(nav).toBeHidden();
 });
 
-test('integration links reach client-specific instructions and source setup copies exactly', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.goto(`${WEB_UNRELEASED}/`);
-  await expect(page.locator('.integration-list a')).toHaveText(['Claude Code', 'Codex CLI', 'Gemini CLI', 'Cursor', 'OpenCode', 'GitHub Copilot', 'Windsurf', 'Cline']);
-  for (const image of await page.locator('.integration-list img').all()) expect(await image.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
-  await page.getByRole('button', { name: 'Codex CLI', exact: true }).click();
-  const command = await page.locator('.command-line code').textContent();
-  await page.getByRole('button', { name: 'Copy', exact: true }).click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(command);
-  await page.locator('.integration-list').getByRole('link', { name: 'Claude Code' }).click();
+test('hero integrations are logo-only with tooltips and reach client-specific instructions', async ({ page }) => {
+  await page.goto('/');
+  const row = page.locator('.hero .integration-row');
+  await expect(row.locator('a')).toHaveCount(8);
+  await expect(row.locator('a')).toHaveText(['', '', '', '', '', '', '', '']);
+  for (const image of await row.locator('img').all()) expect(await image.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const claude = row.getByRole('link', { name: 'Claude Code' });
+  await claude.hover();
+  await expect(claude).toHaveAttribute('data-tip', 'Claude Code');
+  expect(await claude.evaluate((el) => getComputedStyle(el, '::after').opacity)).toBe('1');
+  await claude.click();
   await expect(page).toHaveURL(/\/docs\/connect#claude-code$/);
   await expect(page.locator('#claude-code')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Before you connect' })).toBeVisible();

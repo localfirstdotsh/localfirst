@@ -1,12 +1,17 @@
 /* Landing: one introduction, a real connection action, then the registry. */
-.home { padding-top: var(--space-16); gap: var(--space-12); }
-.hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 96px); align-items: end; }
+.home { padding-top: var(--space-12); gap: var(--space-8); }
+.hero { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
 .hero h1 { font-size: var(--text-hero); max-width: 10ch; font-weight: 650; line-height: 1.02; letter-spacing: -.055em; }
 .hero-period { color: var(--accent); }
-.hero-subtitle { color: var(--fg-muted); font-size: 16px; max-width: 44ch; line-height: 1.65; margin-top: 24px; }
-.hero-description { color: var(--fg-muted); line-height: 1.75; max-width: 45ch; padding-bottom: 3px; }
-.hero-description a { display: inline-flex; align-items: center; gap: 10px; margin-top: 20px; color: var(--fg); font-size: 14px; }
+.hero-subtitle { color: var(--fg-muted); font-size: 16px; max-width: 52ch; line-height: 1.65; margin-top: -4px; }
+.hero-cli { width: min(100%, 460px); }
 .getting-started { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: clamp(32px, 6vw, 96px); padding: 28px 0; border-block: 1px solid var(--border); align-items: start; }
+.integration-row { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; padding: 0; margin: 0; }
+.integration-row a { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius); }
+.integration-row img { width: 22px; height: 22px; filter: invert(1); opacity: .75; }
+.integration-row a:hover img, .integration-row a:focus-visible img { opacity: 1; }
+.integration-row a::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); padding: 4px 8px; border: 1px solid var(--control-border); border-radius: var(--radius); background: var(--bg); color: var(--fg); font-size: 12px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s; z-index: 5; }
+.integration-row a:hover::after, .integration-row a:focus-visible::after { opacity: 1; }
 .eyebrow { font-size: var(--text-eyebrow); letter-spacing: .1em; font-weight: 600; color: var(--fg-muted); margin-bottom: 16px; }
 .setup-section { min-width: 0; }
 .setup-guide { display: block; width: fit-content; margin-top: 8px; font-size: 13px; }
