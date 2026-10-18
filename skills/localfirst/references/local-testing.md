@@ -1,6 +1,6 @@
 # Run a test locally and share the result
 
-The CLI is the npm package `localfirstdotsh` (`runner/` in this repository). It is not yet
+The CLI is the npm package `localfirstdotsh` (`packages/runner/` in this repository). It is not yet
 published to npm, so build it from the repository unless the user says it is installed. Run
 `localfirstdotsh help` for the current command list; it is the source of truth. The registry comes
 from `--registry` or `LOCALFIRST_REGISTRY`; there is no default.

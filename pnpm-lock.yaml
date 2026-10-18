@@ -165,19 +165,18 @@ settings:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
       '@neon/config':
         specifier: ^1.8.6
         version: 1.8.6
       '@neon/env':
         specifier: ^1.5.3
         version: 1.5.3
-    devDependencies:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
 
-  backend:
+  apps/api:
     dependencies:
       '@better-auth/drizzle-adapter':
         specifier: 1.7.7
@@ -193,7 +192,7 @@ importers:
         version: 2.1.4(hono@4.13.13)
       '@localfirst/contracts':
         specifier: workspace:*
-        version: link:../packages/contracts
+        version: link:../../packages/contracts
       '@modelcontextprotocol/hono':
         specifier: 2.0.2
         version: 2.0.2(@modelcontextprotocol/server@2.3.1)(hono@4.13.13)
@@ -250,52 +249,11 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(@types/node@24.9.2)(vite@8.3.4(@types/node@24.9.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
-  packages/contracts:
-    dependencies:
-      yaml:
-        specifier: 2.9.1
-        version: 2.9.1
-      zod:
-        specifier: 4.6.6
-        version: 4.6.6
-    devDependencies:
-      '@types/node':
-        specifier: 24.9.2
-        version: 24.9.2
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: 5.0.3
-        version: 5.0.3(@types/node@24.9.2)(vite@8.3.4(@types/node@24.9.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-
-  runner:
-    dependencies:
-      yaml:
-        specifier: 2.9.1
-        version: 2.9.1
-      zod:
-        specifier: 4.6.6
-        version: 4.6.6
-    devDependencies:
-      '@localfirst/contracts':
-        specifier: workspace:*
-        version: link:../packages/contracts
-      '@types/node':
-        specifier: 24.9.2
-        version: 24.9.2
-      typescript:
-        specifier: 5.9.3
-        version: 5.9.3
-      vitest:
-        specifier: 5.0.3
-        version: 5.0.3(@types/node@24.9.2)(vite@8.3.4(@types/node@24.9.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
-
-  web:
+  apps/web:
     dependencies:
       '@localfirst/contracts':
         specifier: workspace:*
-        version: link:../packages/contracts
+        version: link:../../packages/contracts
       next:
         specifier: 16.4.1
         version: 16.4.1(@playwright/test@1.63.0)(@types/node@24.9.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -336,6 +294,47 @@ importers:
       pg:
         specifier: 8.23.1
         version: 8.23.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.9.2)(vite@8.3.4(@types/node@24.9.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/contracts:
+    dependencies:
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
+      zod:
+        specifier: 4.6.6
+        version: 4.6.6
+    devDependencies:
+      '@types/node':
+        specifier: 24.9.2
+        version: 24.9.2
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 5.0.3
+        version: 5.0.3(@types/node@24.9.2)(vite@8.3.4(@types/node@24.9.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/runner:
+    dependencies:
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
+      zod:
+        specifier: 4.6.6
+        version: 4.6.6
+    devDependencies:
+      '@localfirst/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@types/node':
+        specifier: 24.9.2
+        version: 24.9.2
       typescript:
         specifier: 5.9.3
         version: 5.9.3

@@ -107,7 +107,7 @@ git fetch origin
 git log --oneline origin/staging..origin/dev      # everything in the release
 git diff --stat origin/staging...origin/dev       # shape of the change
 ```
-Call out DB migrations (`backend/drizzle`) and new/changed environment variables; confirm checks are
+Call out DB migrations (`apps/api/drizzle`) and new/changed environment variables; confirm checks are
 green on `dev`; then `gh pr create --base staging --head dev`. Merge only after the user authorizes
 and required checks pass.
 
