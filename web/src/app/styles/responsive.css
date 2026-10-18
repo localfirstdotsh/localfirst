@@ -10,10 +10,8 @@
   .nav[data-open='true'] { display: flex; flex-wrap: wrap; }
   .nav a { padding: 10px 12px; min-height: 44px; }
   .header-actions .connect-action { display: none; }
-  .hero, .getting-started { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .getting-started { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .hero h1 { max-width: 12ch; }
-  .hero-description { max-width: 60ch; }
-  .hero-description a { margin-top: 12px; }
   .home { padding-top: 40px; }
 }
 @media (max-width: 450px) {
@@ -22,8 +20,8 @@
   .brand { font-size: 16px; gap: 8px; }
   .header-actions .button-small { padding-inline: 10px; }
   .hero h1 { font-size: var(--text-hero); }
-  .hero-subtitle { margin-top: 20px; }
-  .hero-description { font-size: 14px; }
+  .integration-row { gap: 0; }
+  .integration-row a { width: 42px; }
   .command-line { padding-left: 10px; gap: 8px; }
   .command-prompt { display: none; }
   .command-line .button { padding: 0 12px; min-height: 40px; font-size: 13px; }
