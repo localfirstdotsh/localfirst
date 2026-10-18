@@ -1,32 +1,20 @@
-# CI is SUSPENDED for the Localfirst MVP development phase.
+# CI runs the same gate as the local checks (`pnpm check`) plus the packed-tarball
+# smoke test, on pull requests and pushes to the permanent branches, and by hand
+# (Actions tab -> CI -> "Run workflow", or `gh workflow run ci.yml --ref <branch>`).
+# See `.agents/skills/git-workflow/SKILL.md` ("Local checks" and "CI/CD status").
 #
-# Automatic triggers are commented out below, not deleted: this workflow runs
-# only when started by hand (Actions tab -> CI -> "Run workflow", or
-# `gh workflow run ci.yml --ref <branch>`). Nothing is enforced automatically,
-# so agents run the local checks before opening a PR instead — see
-# `.agents/skills/git-workflow/SKILL.md` ("Local checks" and "CI/CD status").
-#
-# TO RESTORE AUTOMATED CI (checklist in SKILL.md § "Restoring CI/CD"):
-#   1. Uncomment the `pull_request` and `push` blocks under `on:`.
-#      Keep `workflow_dispatch` so manual runs stay possible.
-#   2. Confirm GitHub Actions can execute on the account — as of
-#      2026-10-11 jobs are rejected with "recent account payments have
-#      failed or your spending limit needs to be increased".
-#   3. Push the branch, open a PR, and confirm the `check` job goes green
-#      before anyone depends on it.
-#   4. Only then require it as a status check (see
-#      `.agents/skills/git-workflow/reference/ruleset.json`), which also
-#      needs the repo public or on a paid plan.
+# `check` is a required status check on the `permanent-branches` ruleset for main,
+# staging and dev, so renaming this job or workflow breaks merging: update the ruleset
+# (`.agents/skills/git-workflow/reference/ruleset.json`) in the same change.
 
 name: CI
 
 on:
   workflow_dispatch:
-  # Suspended for MVP development — restore by uncommenting (see header):
-  # pull_request:
-  #   branches: [main, staging, dev]
-  # push:
-  #   branches: [main, staging, dev]
+  pull_request:
+    branches: [main, staging, dev]
+  push:
+    branches: [main, staging, dev]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -68,3 +56,4 @@ jobs:
       - run: pnpm -r typecheck
       - run: pnpm -r build
       - run: pnpm -r test
+      - run: pnpm --filter localfirstdotsh test:package

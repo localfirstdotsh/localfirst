@@ -1,0 +1,54 @@
+{
+  "name": "localfirstdotsh",
+  "version": "0.1.0",
+  "description": "Connect AI clients to the Localfirst registry and run bounded local AI tests.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "frameworks/langgraph/package.json",
+    "frameworks/langgraph/npm-shrinkwrap.json",
+    "frameworks/langgraph/worker.mjs",
+    "frameworks/langgraph/bakery.mjs"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/vendor-contracts.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:live": "vitest run -c vitest.live.config.ts",
+    "prepack": "pnpm --dir ../.. build:contracts && pnpm build",
+    "test:package": "node scripts/test-package.mjs"
+  },
+  "dependencies": {
+    "zod": "4.6.6",
+    "yaml": "2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.2",
+    "typescript": "5.9.3",
+    "vitest": "5.0.3",
+    "@localfirst/contracts": "workspace:*"
+  },
+  "bin": {
+    "localfirstdotsh": "./dist/cli/bin.js"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/localfirstdotsh/localfirst.git",
+    "directory": "packages/runner"
+  },
+  "homepage": "https://localfirst.sh",
+  "bugs": {
+    "url": "https://github.com/localfirstdotsh/localfirst/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

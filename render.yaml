@@ -1,4 +1,4 @@
-# Render Blueprint for Localfirst (BACKEND_PRD section 22, backend/docs/RUNBOOK.md
+# Render Blueprint for Localfirst (BACKEND_PRD section 22, docs/operations/RUNBOOK.md
 # "Staging on Render"). One project, `localfirst`, with an environment per
 # stage. Nothing is shared between environments: each gets its own services,
 # environment group, secrets, database, GitHub OAuth app, and domain, and
@@ -24,10 +24,10 @@ projects:
               - key: LOG_LEVEL
                 value: info
               # Cloudflare in front of Render's private load balancer
-              # (backend/src/http/client-ip.ts). Confirm Render's proxy addresses on
+              # (apps/api/src/http/client-ip.ts). Confirm Render's proxy addresses on
               # the first deploy and narrow `private` if they differ. The website must call
               # this API over Render's private network and forward each visitor's address
-              # (web/.env.example: LOCALFIRST_API_URL, LOCALFIRST_CLIENT_IP_HEADER); otherwise
+              # (apps/web/.env.example: LOCALFIRST_API_URL, LOCALFIRST_CLIENT_IP_HEADER); otherwise
               # every website visitor shares one anonymous rate-limit allowance.
               - key: TRUSTED_PROXIES
                 value: cloudflare,private
@@ -37,7 +37,7 @@ projects:
               - key: API_BASE_URL
                 sync: false
               # The public website's origin, for example https://staging.localfirst.sh. The
-              # same value is used for API_BASE_URL; all browser pages live in web/.
+              # same value is used for API_BASE_URL; all browser pages live in apps/web/.
               - key: WEBSITE_URL
                 sync: false
               # Neon project `localfirstdotsh-staging`, POOLED connection string.
@@ -63,7 +63,7 @@ projects:
             region: ohio # next to Neon's AWS us-east-2
             plan: starter
             branch: staging
-            dockerfilePath: ./backend/Dockerfile
+            dockerfilePath: ./apps/api/Dockerfile
             dockerContext: .
             # Exactly one migration run per release, before the new API takes traffic.
             preDeployCommand: node dist/db/migrate.js
@@ -74,7 +74,7 @@ projects:
             autoDeployTrigger: commit
             buildFilter:
               paths:
-                - backend/**
+                - apps/api/**
                 - packages/contracts/**
                 - package.json
                 - pnpm-lock.yaml
@@ -83,8 +83,7 @@ projects:
                 - .dockerignore
                 - render.yaml
               ignoredPaths:
-                - backend/test/**
-                - backend/docs/**
+                - apps/api/test/**
             envVars:
               - fromGroup: localfirst-staging
               # Neon DIRECT connection string: migrations bypass the pooler. Only the
@@ -92,17 +91,17 @@ projects:
               - key: MIGRATION_DATABASE_URL
                 sync: false
 
-          # The public website (web/Dockerfile). It holds no secrets and is not given the
+          # The public website (apps/web/Dockerfile). It holds no secrets and is not given the
           # environment group, which carries the database credentials and session secret.
           # It reaches the API over Render's private network and forwards each visitor's
-          # address, so the API's rate limits apply per visitor (web/.env.example).
+          # address, so the API's rate limits apply per visitor (apps/web/.env.example).
           - type: web
             name: localfirst-staging-web
             runtime: docker
             region: ohio
             plan: starter
             branch: staging
-            dockerfilePath: ./web/Dockerfile
+            dockerfilePath: ./apps/web/Dockerfile
             dockerContext: .
             # Liveness only: it makes no call to the API, so an API outage never restarts a
             # healthy website (which shows its own "registry unavailable" states instead).
@@ -111,7 +110,7 @@ projects:
             autoDeployTrigger: commit
             buildFilter:
               paths:
-                - web/**
+                - apps/web/**
                 - packages/contracts/**
                 - package.json
                 - pnpm-lock.yaml
@@ -120,9 +119,9 @@ projects:
                 - .dockerignore
                 - render.yaml
               ignoredPaths:
-                - web/e2e/**
-                - web/**/*.test.ts
-                - web/**/*.test.tsx
+                - apps/web/e2e/**
+                - apps/web/**/*.test.ts
+                - apps/web/**/*.test.tsx
             envVars:
               # The API's PRIVATE address, `http://localfirst-staging-api:<port>` (the host and
               # port are on the API service's Connect menu). Calls from here must arrive over the
@@ -153,14 +152,14 @@ projects:
             region: ohio
             plan: starter
             branch: staging
-            dockerfilePath: ./backend/Dockerfile
+            dockerfilePath: ./apps/api/Dockerfile
             dockerContext: .
             dockerCommand: node dist/jobs/worker.js
             maxShutdownDelaySeconds: 30
             autoDeployTrigger: commit
             buildFilter:
               paths:
-                - backend/**
+                - apps/api/**
                 - packages/contracts/**
                 - package.json
                 - pnpm-lock.yaml
@@ -169,8 +168,7 @@ projects:
                 - .dockerignore
                 - render.yaml
               ignoredPaths:
-                - backend/test/**
-                - backend/docs/**
+                - apps/api/test/**
             envVars:
               - fromGroup: localfirst-staging
 

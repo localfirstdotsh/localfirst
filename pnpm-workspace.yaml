@@ -1,8 +1,6 @@
 packages:
+  - apps/*
   - packages/*
-  - backend
-  - runner
-  - web
 allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:

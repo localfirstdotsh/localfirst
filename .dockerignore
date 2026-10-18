@@ -7,9 +7,9 @@
 .git
 **/coverage
 **/*.log
-backend/test
-runner/src
-runner/test
+apps/api/test
+packages/runner/src
+packages/runner/test
 docs
 
 # Build output and test artifacts of the website.

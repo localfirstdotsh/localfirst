@@ -17,9 +17,10 @@ active one.
 
 ## Checks
 
-**GitHub Actions CI is suspended for the MVP phase** (`.github/workflows/ci.yml` is kept, but runs
-only via `workflow_dispatch`). No status check reports on a PR and none may be required, so local
-checks are the only gate — run them before opening one.
+**GitHub Actions CI runs on every pull request and push to `main`, `staging` and `dev`**
+(`.github/workflows/ci.yml`: `pnpm check` plus the packed-tarball smoke test on Linux, Node 22). Its
+`check` job is a **required status check** on those branches, and a branch must be up to date with its base
+before it can merge. Still run the local checks before opening a PR, and report what CI shows honestly.
 
 `pnpm install --frozen-lockfile`, then `pnpm check` (= `pnpm build:contracts && pnpm -r typecheck &&
 pnpm -r build && pnpm -r test`), or the filtered form for the package you touched:
@@ -39,6 +40,6 @@ The skill's "Local checks" and "Restoring CI/CD" sections are authoritative.
 ## Documentation
 
 Code and configuration are the source of truth. Record completed work in commits and PR
-descriptions, not in Markdown status reports, change logs, or implementation plans. `BACKEND_PRD.md`,
-`FRONTEND_PRD.md` and `RESEARCH.MD` are the product specification; update the relevant one in place
+descriptions, not in Markdown status reports, change logs, or implementation plans. `docs/product/`
+(`BACKEND_PRD.md`, `FRONTEND_PRD.md`, `RESEARCH.md`) is the product specification; update the relevant one in place
 rather than adding a new document per feature, fix, or investigation.

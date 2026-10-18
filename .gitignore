@@ -10,5 +10,5 @@ coverage/
 .next/
 next-env.d.ts
 *.tsbuildinfo
-web/playwright-report/
-web/test-results/
+apps/web/playwright-report/
+apps/web/test-results/

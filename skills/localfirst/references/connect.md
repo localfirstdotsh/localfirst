@@ -17,7 +17,7 @@ instead.
 ## Clients
 
 Tested clients and what each result actually proves are recorded in
-[backend/docs/CLIENT_MATRIX.md](../../../backend/docs/CLIENT_MATRIX.md). A client not listed there
+[docs/operations/CLIENT_MATRIX.md](../../../docs/operations/CLIENT_MATRIX.md). A client not listed there
 is untested; say so rather than claiming it works.
 
 `localfirstdotsh mcp add` is not available yet. Configure the client with its own MCP command, using

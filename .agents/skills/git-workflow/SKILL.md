@@ -54,8 +54,8 @@ Git over HTTPS uses `gh auth git-credential`, so one switch covers both `git` an
 1. `scripts/state.sh`; confirm you are on your own task branch, not a permanent one.
 2. `git status` + `git diff`: every change must belong to this task. Changes that do not (including
    another agent's in-flight files) are reported and left alone, not committed.
-3. **Run the applicable local checks and record real results** — see "Local checks" below. CI does
-   not run automatically while it is suspended, so this is the only gate that exists. A PR opened
+3. **Run the applicable local checks and record real results** — see "Local checks" below. CI also
+   runs on the PR and is required to merge, but the local results still go in the PR. A PR opened
    without them is incomplete.
 4. Scan for secrets and junk: `.env`, `.env.local`, keys, tokens, `*.log`, `coverage/`, `dist/`,
    `node_modules/`. Never commit them; `.gitignore` is a safety net, not a substitute for looking.
@@ -107,7 +107,7 @@ git fetch origin
 git log --oneline origin/staging..origin/dev      # everything in the release
 git diff --stat origin/staging...origin/dev       # shape of the change
 ```
-Call out DB migrations (`backend/drizzle`) and new/changed environment variables; confirm checks are
+Call out DB migrations (`apps/api/drizzle`) and new/changed environment variables; confirm checks are
 green on `dev`; then `gh pr create --base staging --head dev`. Merge only after the user authorizes
 and required checks pass.
 
@@ -171,60 +171,54 @@ without running anything — use it to sanity-check a destructive-looking comman
 Delete a task branch only after its PR is merged and no worktree still uses it: `git branch -d`
 (never `-D`), and `git worktree remove` first.
 
-## CI/CD status (suspended for MVP)
+## CI/CD status (automated and required)
 
-GitHub Actions is **suspended for the MVP development phase**. `.github/workflows/ci.yml` still
-exists with its full `check` job, but its `pull_request` and `push` triggers are commented out, so
-only `workflow_dispatch` is active:
+GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`, `staging` and
+`dev`, and by hand:
 
 ```sh
-gh workflow run ci.yml --ref <branch>     # manual run, when you want it
+gh workflow run ci.yml --ref <branch>     # manual run
 gh run watch                              # follow it
 ```
 
-Consequences to respect:
+The `check` job runs `pnpm check` (install with the frozen lockfile, contracts build, typecheck, build,
+and every package's tests against a throwaway PostgreSQL service) and then
+`pnpm --filter localfirstdotsh test:package` (pack, install the tarball, run the CLI), on Ubuntu with
+Node 22. It uses read-only repository permissions and no secrets.
 
-- **No new automatic status check reports on a PR, and none may be required.** Historical failed
-  checks can remain on older PRs; inspect their reason and run the local gate. Do not add a required
-  status check, and do not wait for or claim a CI result that was never produced.
-- The local checks above are the entire gate. Run them; report them honestly.
-- Nothing else changes: feature branches still cut from `dev` and PR into `dev`, and promotion to
+Rules to respect:
+
+- **`check` is a required status check** on the `permanent-branches` ruleset, with the "branch must be up
+  to date" policy on. A PR cannot merge until `check` passes on its latest commit, and when its base moves
+  the branch needs updating (`git merge origin/<base>`, then push) so CI runs again. Read what CI reports,
+  fix failures on the task branch (`gh run view --log-failed`), and never claim a result that did not
+  run. A failure that is not caused by your change is still a failure to report; fix the test.
+- The local checks stay a pre-PR habit: they find problems before a push, and their results go in the PR.
+- Nothing else changes: task branches still cut from `dev` and PR into `dev`, and promotion to
   `staging` or `main` still needs explicit authorization.
 
-GitHub Actions also cannot execute on this account right now for a separate reason — runs are
-rejected with "recent account payments have failed or your spending limit needs to be increased" —
-so even a manual `workflow_dispatch` run will not start until billing is resolved.
+### Changing the required check
 
-### Restoring CI/CD
+The live ruleset is the source of truth; `reference/ruleset.json` is its copy. To change the check (for
+example if the job is renamed), edit the file and apply it to the live ruleset. This changes repository
+settings, so it needs the owner's go-ahead:
 
-When the MVP is ready, in one PR:
-
-1. Uncomment the `pull_request` and `push` blocks under `on:` in `.github/workflows/ci.yml`, keeping
-   `workflow_dispatch`.
-2. Resolve the account billing / spending-limit problem, or Actions still will not run.
-3. Run `pnpm install --frozen-lockfile` and `pnpm check` against the dedicated test database.
-   Keep the workflow's PostgreSQL service and `TEST_DATABASE_URL` configuration aligned with it.
-4. Open the PR and confirm the `check` job actually goes green on it.
-5. Only then require `check` as a status check and restore the "Local checks" step to its normal role
-   as a pre-PR habit rather than the sole gate.
-6. Remove the suspension notes from this section, the header comment in `ci.yml`, and `AGENTS.md`.
+```sh
+gh api repos/localfirstdotsh/localfirst/rulesets                 # find the id of permanent-branches
+gh api -X PUT repos/localfirstdotsh/localfirst/rulesets/<id> --input .agents/skills/git-workflow/reference/ruleset.json
+```
 
 Deployment is a separate, later step: no deployment environments or deploy jobs exist in this repo,
-so restoring CI restores checks only. Do not describe any merge as deploying anything.
+so CI runs checks only. Do not describe any merge as deploying anything.
 
 ## GitHub protection (current status)
 
-`localfirstdotsh/localfirst` is a public repo, so rulesets are available, but **none are applied until
-the owner applies them**. Until then the rules above are enforced by convention and by `guard.sh`.
+`localfirstdotsh/localfirst` is a public repo with the ruleset **`permanent-branches` active** on `main`,
+`staging` and `dev` (applied by the owner, 2026-10-17). It blocks deleting them, blocks non-fast-forward
+(force) pushes, and requires a pull request with no bypass actors, so even the owner cannot push to them
+directly. Only **merge commits** are allowed for PRs into these branches, because promotions must keep
+the three histories related. Review count is 0 (a solo owner can merge), and the **`check` status check
+is required** (applied 2026-10-17).
 
-`reference/ruleset.json` holds the intended ruleset for all three branches — require a pull request,
-block force pushes, block deletions, no bypass actors. Apply it in one command:
-
-```sh
-gh api -X POST repos/localfirstdotsh/localfirst/rulesets \
-  --input .agents/skills/git-workflow/reference/ruleset.json
-```
-
-Note that the file also lists `check` as a required status check. **While CI is suspended, strip the
-`required_status_checks` rule before applying it**, or the ruleset will block every PR on a check
-that never reports. Restore that rule as step 5 of "Restoring CI/CD" above.
+`reference/ruleset.json` is a copy of the live ruleset; "Changing the required check" above gives the
+command that applies an edit to it.

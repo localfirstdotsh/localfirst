@@ -1,12 +1,12 @@
 # Localfirst.sh — backend
 
-Implementation of [`BACKEND_PRD.md`](BACKEND_PRD.md) **Phase 1 (P0): the
+Implementation of [`BACKEND_PRD.md`](docs/product/BACKEND_PRD.md) **Phase 1 (P0): the
 agent-native project registry**, **Phase 2 (P1): local testing**, and the
 **Phase 3 (P2) community backend**. The
 registry stores and serves portable project specifications over REST and a
 hosted MCP adapter, with immutable versions, explicit human approval of the
 exact published artifact, source provenance, and conservative compatibility
-assessment. The `localfirstdotsh` runner (`runner/`) runs bounded declarative
+assessment. The `localfirstdotsh` runner (`packages/runner/`) runs bounded declarative
 tests and fixed agent workflows against a local Ollama or LM Studio runtime and submits sanitized reports
 for review.
 
@@ -21,7 +21,7 @@ for review.
 | Scoped OAuth for agents, GitHub human sign-in, exact-artifact approval | Implemented |
 | Moderation, claims, audit, durable jobs, outbox, idempotency | Implemented |
 | Five curated Jetson/edge entries plus a documentation-only hardware entry | Implemented (seed) |
-| Local runner, Ollama/LM Studio adapters, local test execution | Implemented (`runner/`, package `localfirstdotsh`, not yet published to npm) |
+| Local runner, Ollama/LM Studio adapters, local test execution | Implemented (`packages/runner/`, package `localfirstdotsh`, not yet published to npm) |
 | Build/test-result submission, operator evidence review, compatibility reports | Implemented |
 | Comparison groups, independent verification, derivatives, relationship views, collections, troubleshooting notes | Implemented (Phase 3) |
 | Fixed multi-agent environments, workflow fixtures, private local inputs and sanitized workflow evidence | Implemented; environment handoff and workflow writes default off |
@@ -47,9 +47,12 @@ Consequences that the API states for itself rather than implying:
 ## Layout
 
 ```text
-web/                    All public/private browser UI; Next.js routes and shared design system
+apps/web/               All public/private browser UI; Next.js routes and shared design system
 packages/contracts/     Shared project, test and environment schemas, canonical digests, safety scanners
-backend/src/
+packages/runner/        The `localfirstdotsh` CLI: local runtimes, consent, tests and reports
+docs/product/           Product specification: BACKEND_PRD.md, FRONTEND_PRD.md, RESEARCH.md
+docs/operations/        Runbook and tested-client matrix
+apps/api/src/
   app.ts, server.ts     Hono composition and the Node entry point
   auth/                 Better Auth composition, product scopes, actor resolution, guards
   api/v1/               REST adapters (+ phase.ts for documented-but-unimplemented routes)
@@ -66,7 +69,7 @@ backend/src/
 
 Project v0.3 adds environment v0.1 and workflow test/build/result v0.2 contracts;
 legacy project and component-test readers remain supported. See
-[`BACKEND_PRD.md` §21.1](BACKEND_PRD.md)
+[`BACKEND_PRD.md` §21.1](docs/product/BACKEND_PRD.md)
 for the bounded execution profiles and feature gates.
 
 The original sample set contains five fictional small-business projects:
@@ -85,11 +88,11 @@ To try any example from this unpublished runner:
 
 ```bash
 pnpm build
-node runner/dist/cli/bin.js environment samples
-node runner/dist/cli/bin.js environment prepare --sample bakery --out ./bakery
-node runner/dist/cli/bin.js environment plan ./bakery --runtime ollama --endpoint http://127.0.0.1:11434 --model <installed-model>
-node runner/dist/cli/bin.js environment run <saved-plan-path> --offline
-node runner/dist/cli/bin.js report trace <saved-report-path> --workspace ./bakery --out ./bakery-trail.html
+node packages/runner/dist/cli/bin.js environment samples
+node packages/runner/dist/cli/bin.js environment prepare --sample bakery --out ./bakery
+node packages/runner/dist/cli/bin.js environment plan ./bakery --runtime ollama --endpoint http://127.0.0.1:11434 --model <installed-model>
+node packages/runner/dist/cli/bin.js environment run <saved-plan-path> --offline
+node packages/runner/dist/cli/bin.js report trace <saved-report-path> --workspace ./bakery --out ./bakery-trail.html
 ```
 
 Each stage requests its own local approval. The sample uses three agent roles
@@ -110,10 +113,10 @@ All four roles share one installed model. The new agent prepares advice for
 the owner and cannot override the trusted decision status.
 
 ```bash
-node runner/dist/cli/bin.js environment prepare --sample bakery-holiday --out ./bakery-holiday
-node runner/dist/cli/bin.js environment plan ./bakery-holiday --runtime ollama --endpoint http://127.0.0.1:11434 --model <installed-model>
-node runner/dist/cli/bin.js environment run <saved-remix-plan-path> --offline
-node runner/dist/cli/bin.js report trace <saved-remix-report-path> --workspace ./bakery-holiday --out ./bakery-holiday-trail.html
+node packages/runner/dist/cli/bin.js environment prepare --sample bakery-holiday --out ./bakery-holiday
+node packages/runner/dist/cli/bin.js environment plan ./bakery-holiday --runtime ollama --endpoint http://127.0.0.1:11434 --model <installed-model>
+node packages/runner/dist/cli/bin.js environment run <saved-remix-plan-path> --offline
+node packages/runner/dist/cli/bin.js report trace <saved-remix-report-path> --workspace ./bakery-holiday --out ./bakery-holiday-trail.html
 ```
 
 Try: “90 cupcakes: 45 chocolate and 45 vanilla, blue icing. Pickup
@@ -141,10 +144,10 @@ net unit demand, stock coverage, pack-rounded quantities, supplier selection and
 integer merchandise costs; agent outputs cannot override its status or quantity.
 
 ```bash
-node runner/dist/cli/bin.js environment prepare --sample stock-replenishment --out ./stock-replenishment
-node runner/dist/cli/bin.js environment plan ./stock-replenishment --runtime ollama --endpoint http://127.0.0.1:11434 --model <installed-model>
-node runner/dist/cli/bin.js environment run <saved-stock-plan-path> --offline
-node runner/dist/cli/bin.js report trace <saved-stock-report-path> --workspace ./stock-replenishment --out ./stock-replenishment-trail.html
+node packages/runner/dist/cli/bin.js environment prepare --sample stock-replenishment --out ./stock-replenishment
+node packages/runner/dist/cli/bin.js environment plan ./stock-replenishment --runtime ollama --endpoint http://127.0.0.1:11434 --model <installed-model>
+node packages/runner/dist/cli/bin.js environment run <saved-stock-plan-path> --offline
+node packages/runner/dist/cli/bin.js report trace <saved-stock-report-path> --workspace ./stock-replenishment --out ./stock-replenishment-trail.html
 ```
 
 The baseline fixture has 112 net units sold over 14 completed days, 64 available
@@ -217,7 +220,7 @@ on 18).
 ```bash
 pnpm install
 createdb localfirst_dev
-cp backend/.env.example backend/.env     # then edit
+cp apps/api/.env.example apps/api/.env     # then edit
 pnpm --filter @localfirst/contracts build
 pnpm db:migrate                          # one migration job; replicas never auto-migrate
 pnpm db:seed                             # curated catalog, via draft → approval → publish
@@ -248,7 +251,7 @@ production.
 | `pnpm build` / `pnpm typecheck` | Compile and typecheck every package |
 | `pnpm test` | Contracts unit tests plus backend integration tests against PostgreSQL |
 | `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:check` | Migration authoring, release migration job, drift check |
-| `pnpm --filter @localfirst/backend db:auth-schema` | Regenerate the Better Auth Drizzle schema after an auth upgrade |
+| `pnpm --filter @localfirst/api db:auth-schema` | Regenerate the Better Auth Drizzle schema after an auth upgrade |
 | `pnpm db:seed` / `pnpm db:seed --reset` | Seed or reseed the curated catalog |
 
 Tests need a database: `createdb localfirst_test` (override with
@@ -256,11 +259,11 @@ Tests need a database: `createdb localfirst_test` (override with
 
 ## Documentation
 
-- [`web/README.md`](web/README.md) — public frontend ownership, design tokens, components, gallery and checks.
+- [`apps/web/README.md`](apps/web/README.md) — public frontend ownership, design tokens, components, gallery and checks.
 
-- [`backend/docs/IMPLEMENTATION_STATUS.md`](backend/docs/IMPLEMENTATION_STATUS.md) — PRD section coverage, decisions taken, and open items.
-- [`backend/docs/CLIENT_MATRIX.md`](backend/docs/CLIENT_MATRIX.md) — what was actually tested, including the MCP protocol version this release negotiates.
-- [`backend/docs/RUNBOOK.md`](backend/docs/RUNBOOK.md) — deploy, migrate, restore, and incident handling.
+- [`docs/product/IMPLEMENTATION_STATUS.md`](docs/product/IMPLEMENTATION_STATUS.md) — PRD section coverage, decisions taken, and open items.
+- [`docs/operations/CLIENT_MATRIX.md`](docs/operations/CLIENT_MATRIX.md) — what was actually tested, including the MCP protocol version this release negotiates.
+- [`docs/operations/RUNBOOK.md`](docs/operations/RUNBOOK.md) — deploy, migrate, restore, and incident handling.
 
 ## License
 

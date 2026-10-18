@@ -13,24 +13,22 @@
     "typecheck": "pnpm build:contracts && pnpm -r typecheck",
     "test": "pnpm build:contracts && pnpm -r test",
     "check": "pnpm build:contracts && pnpm -r typecheck && pnpm -r build && pnpm -r test",
-    "dev": "pnpm build:contracts && pnpm --parallel --filter @localfirst/backend --filter @localfirst/web dev",
-    "dev:backend": "pnpm --filter @localfirst/backend dev",
+    "dev": "pnpm build:contracts && pnpm --parallel --filter @localfirst/api --filter @localfirst/web dev",
+    "dev:api": "pnpm --filter @localfirst/api dev",
     "dev:web": "pnpm --filter @localfirst/web dev",
-    "worker": "pnpm --filter @localfirst/backend worker",
-    "db:generate": "pnpm --filter @localfirst/backend db:generate",
-    "db:migrate": "pnpm --filter @localfirst/backend db:migrate",
-    "db:seed": "pnpm --filter @localfirst/backend db:seed",
+    "worker": "pnpm --filter @localfirst/api worker",
+    "db:generate": "pnpm --filter @localfirst/api db:generate",
+    "db:migrate": "pnpm --filter @localfirst/api db:migrate",
+    "db:seed": "pnpm --filter @localfirst/api db:seed",
     "test:live": "pnpm --filter localfirstdotsh test:live",
     "test:e2e": "pnpm --filter @localfirst/web test:e2e",
-    "verify:environments": "pnpm build && pnpm --filter @localfirst/backend verify:environments",
-    "verify:cli-examples": "pnpm build && pnpm --filter @localfirst/backend verify:cli-examples"
+    "verify:environments": "pnpm build && pnpm --filter @localfirst/api verify:environments",
+    "verify:cli-examples": "pnpm build && pnpm --filter @localfirst/api verify:cli-examples"
   },
   "devDependencies": {
+    "@neon/config": "^1.8.6",
+    "@neon/env": "^1.5.3",
     "typescript": "5.9.3"
   },
-  "packageManager": "pnpm@12.4.1",
-  "dependencies": {
-    "@neon/config": "^1.8.6",
-    "@neon/env": "^1.5.3"
-  }
+  "packageManager": "pnpm@12.4.1"
 }
