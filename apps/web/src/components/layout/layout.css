@@ -2,7 +2,7 @@
 .site-header { border-bottom: 1px solid var(--border); }
 .site-header .container { display: flex; align-items: center; gap: 36px; min-height: 72px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--fg); font-weight: 650; font-size: 17px; letter-spacing: -.025em; white-space: nowrap; }
-.brand-mark { display: block; width: auto; height: var(--size-brand); flex-shrink: 0; color: var(--accent); }
+.brand-mark { display: block; width: var(--space-4); height: var(--space-6); flex-shrink: 0; color: var(--accent); }
 .nav { display: flex; gap: 26px; flex: 1; }
 .nav a { color: var(--fg-muted); padding: 24px 0 22px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; transition: color 120ms; }
 .nav a:hover { color: var(--fg); }
