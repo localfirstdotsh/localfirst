@@ -3,6 +3,11 @@
 Connect Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, VS Code, Cursor, OpenCode, Windsurf, Cline, Claude Desktop, or ChatGPT to a Localfirst registry, discover local model
 runtimes, and plan and run bounded local AI tests.
 
+This package is the Localfirst **runner**: the `localfirstdotsh` CLI and the local
+execution engine behind it. It is the only part of Localfirst that runs models, always
+on your machine; the registry never does. Plans and reports record its version and
+`localfirst/runner/*` contract. In the source repository it lives in `packages/runner/`.
+
 Version 0.1.0 is being prepared for its first npm release. The commands below
 become available through npm after publication.
 
