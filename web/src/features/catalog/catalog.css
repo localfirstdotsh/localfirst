@@ -1,6 +1,6 @@
 /* Projects discovery */
 .container-read { max-width: 960px; margin-left: max(0px, calc((100% - var(--content-max)) / 2)); margin-right: auto; }
-.page-top { padding-top: var(--space-7); }
+.page-top { padding-top: var(--space-8); }
 
 .search-field { position: relative; display: flex; align-items: center; }
 .search-field input[type='search'] { width: 100%; min-height: 44px; background: var(--card); color: var(--fg); border: 1px solid var(--control-border); border-radius: var(--radius); padding: 0 44px; font: inherit; appearance: none; }
