@@ -1,6 +1,6 @@
 /**
  * The tools the registry's MCP server advertises, for people reading what an
- * AI client can do. `backend/test/mcp.test.ts` fails if this list and the
+ * AI client can do. `apps/api/test/mcp.test.ts` fails if this list and the
  * server's `tools/list` disagree, so it cannot drift silently.
  *
  * `read` tools change nothing; `save` tools write private drafts, builds,

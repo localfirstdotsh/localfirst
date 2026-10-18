@@ -40,6 +40,6 @@ The skill's "Local checks" and "Restoring CI/CD" sections are authoritative.
 ## Documentation
 
 Code and configuration are the source of truth. Record completed work in commits and PR
-descriptions, not in Markdown status reports, change logs, or implementation plans. `BACKEND_PRD.md`,
-`FRONTEND_PRD.md` and `RESEARCH.MD` are the product specification; update the relevant one in place
+descriptions, not in Markdown status reports, change logs, or implementation plans. `docs/product/`
+(`BACKEND_PRD.md`, `FRONTEND_PRD.md`, `RESEARCH.md`) is the product specification; update the relevant one in place
 rather than adding a new document per feature, fix, or investigation.

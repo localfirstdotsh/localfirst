@@ -2,7 +2,7 @@
  * Whether a first-party runner can execute a test definition.
  *
  * The hosted registry cannot depend on the runner, so this is a pure mirror of
- * the runner's `checkExecutable` (runner/src/harnesses/executable.ts). A parity
+ * the runner's `checkExecutable` (packages/runner/src/harnesses/executable.ts). A parity
  * test in the runner package asserts the two agree. A declared harness is not a
  * shipped runner: `runner_available` is true only for definitions this accepts.
  */
