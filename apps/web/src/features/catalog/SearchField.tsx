@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SearchIcon } from '../../components/ui/SearchIcon';
 
 /**
  * The one search input. It belongs to a GET form, so Enter submits it and the text lives in the
@@ -9,10 +10,7 @@ import Link from 'next/link';
 export function SearchField({ defaultValue, clearHref }: { defaultValue: string; clearHref: string }) {
   return (
     <div className="search-field">
-      <svg className="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <circle cx="7" cy="7" r="4.75" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M10.5 10.5 14 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
+      <SearchIcon className="search-icon" />
       <label className="visually-hidden" htmlFor="q">
         Search projects
       </label>

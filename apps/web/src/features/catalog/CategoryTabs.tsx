@@ -12,6 +12,10 @@ const PLURAL: Record<string, string> = {
   documentation: 'Documentation',
 };
 
+export function categoryLabel(type: string): string {
+  return PLURAL[type] ?? humanize(type);
+}
+
 /**
  * Project categories, a single choice on the `type` filter. Plain links keep the rest of the
  * query (search, advanced filters, sort) and need no JavaScript. On a narrow screen the row
@@ -22,7 +26,7 @@ export function CategoryTabs({ query }: { query: CatalogQuery }) {
   const allActive = query.filters.type.length === 0;
   const items = [
     { value: null as string | null, label: 'All', active: allActive },
-    ...FILTER_VOCABULARY.type.map((value) => ({ value: value as string | null, label: PLURAL[value] ?? humanize(value), active: selected === value })),
+    ...FILTER_VOCABULARY.type.map((value) => ({ value: value as string | null, label: categoryLabel(value), active: selected === value })),
   ];
   return (
     <nav aria-label="Project categories" className="category-tabs">

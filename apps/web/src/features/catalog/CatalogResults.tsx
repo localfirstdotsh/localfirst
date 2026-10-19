@@ -5,9 +5,30 @@ import {
   ApiUnavailableError,
   listProjects,
 } from '../../lib/api';
-import { selectedFilterCount, toPagePath, withoutSearchText, type CatalogQuery } from '../../lib/catalog-query';
+import { emptyQuery, selectedFilterCount, toPagePath, type CatalogQuery } from '../../lib/catalog-query';
 import { ProjectResult } from './ProjectResult';
 import { StatePanel } from '../../components/composites/StatePanel';
+import { EmptyState } from '../../components/composites/EmptyState';
+import { buttonClassName } from '../../components/ui/Button';
+import { catalogEmptyState } from './empty-state';
+
+function CatalogError({ title, description, query, requestId }: {
+  title: string;
+  description: string;
+  query: CatalogQuery;
+  requestId?: string | null;
+}) {
+  return (
+    <div className="catalog-state">
+      <div className="catalog-error">
+        <StatePanel title={title} tone="warning" requestId={requestId}>
+          <p>{description}</p>
+          <p className="mt-12"><a href={toPagePath(query, { keepCursor: true })} className={buttonClassName()}>Try again</a></p>
+        </StatePanel>
+      </div>
+    </div>
+  );
+}
 
 /** Fetches one page and renders list, empty, or error state. Keeps the query visible on failure. */
 export async function CatalogResults({ query, preview = false }: { query: CatalogQuery; preview?: boolean }) {
@@ -15,26 +36,20 @@ export async function CatalogResults({ query, preview = false }: { query: Catalo
     const page = await listProjects(query, preview ? 4 : undefined);
 
     if (page.items.length === 0) {
-      const filters = selectedFilterCount(query) > 0;
-      if (filters) {
-        return (
-          <StatePanel title="No projects match these filters">
-            Nothing fits the selected filters{query.q ? ' and search' : ''}. <Link href="/projects">Clear filters</Link>
-          </StatePanel>
-        );
-      }
-      if (query.q) {
-        return (
-          <StatePanel title="No projects match this search">
-            Nothing matched “{query.q}”. Check the spelling or try fewer words.{' '}
-            <Link href={toPagePath(withoutSearchText(query))}>Clear search</Link>
-          </StatePanel>
-        );
-      }
+      // A filtered empty response cannot tell us whether the registry itself is empty.
+      // Probe only in that case, with the smallest supported page, and let failures reach
+      // the error state. Populated pages keep their single request.
+      const narrowed = Boolean(query.q || query.cursor || selectedFilterCount(query));
+      const hasProjects = narrowed && (await listProjects(emptyQuery(), 1)).items.length > 0;
+      const state = catalogEmptyState(query, hasProjects);
       return (
-        <StatePanel title="No published projects yet">
-          The registry has no published records in this environment.
-        </StatePanel>
+        <div className="catalog-state">
+          <EmptyState
+            title={state.title}
+            description={state.description}
+            action={state.action && <Link href={state.action.href} className={buttonClassName()}>{state.action.label}</Link>}
+          />
+        </div>
       );
     }
 
@@ -65,23 +80,17 @@ export async function CatalogResults({ query, preview = false }: { query: Catalo
   } catch (error) {
     if (error instanceof ApiRequestError) {
       return (
-        <StatePanel title="This search was not accepted" tone="warning" requestId={error.requestId}>
-          {error.message} <Link href="/projects">Clear filters</Link>
-        </StatePanel>
+        <CatalogError title="This search was not accepted" description={error.message} query={query} requestId={error.requestId} />
       );
     }
     if (error instanceof ApiContractError) {
       return (
-        <StatePanel title="The registry sent an unexpected response" tone="warning">
-          Nothing is shown rather than guessing. <a href={toPagePath(query, { keepCursor: true })}>Try again</a>
-        </StatePanel>
+        <CatalogError title="The registry sent an unexpected response" description="Projects could not be loaded." query={query} />
       );
     }
     const requestId = error instanceof ApiUnavailableError ? error.requestId : null;
     return (
-      <StatePanel title="The registry is unavailable" tone="warning" requestId={requestId}>
-        Projects could not be loaded. <a href={toPagePath(query, { keepCursor: true })}>Try again</a>
-      </StatePanel>
+      <CatalogError title="The registry is unavailable" description="Projects could not be loaded." query={query} requestId={requestId} />
     );
   }
 }
