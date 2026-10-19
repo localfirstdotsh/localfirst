@@ -137,12 +137,12 @@ projects:
               # URLs and the sitemap.
               - key: LOCALFIRST_SITE_URL
                 sync: false
-              # The visitor's address as set by Render's edge, which runs on Cloudflare. There is no
-              # Cloudflare proxy of ours (DNS is in Vercel), so this is only safe if Render's edge
-              # overwrites a value the visitor sends. Verify that before relying on it
-              # (docs/operations/RUNBOOK.md "Staging on Render", step 5).
-              - key: LOCALFIRST_CLIENT_IP_HEADER
-                value: cf-connecting-ip
+              # LOCALFIRST_CLIENT_IP_HEADER is deliberately NOT set. Render's edge passes a
+              # visitor-sent `cf-connecting-ip` through unchanged (tested on staging, 2026-10-18), so
+              # naming it would let anyone choose their own rate-limit allowance. Until a header the
+              # edge sets or overwrites is found, every visitor shares the website's one allowance
+              # (docs/operations/RUNBOOK.md "Staging on Render", step 5). Removing a key here does not
+              # delete it from the service: delete it in the dashboard too.
               # Setup instructions appear only when the CLI is released and tested. Until then
               # the site says it is not available yet. Do not set these early:
               #   LOCALFIRST_CLI_RELEASED, LOCALFIRST_CLI_VERSION,
