@@ -21,8 +21,8 @@
 .gap-8 { gap: 8px; } .gap-16 { gap: 16px; } .gap-24 { gap: 24px; } .gap-32 { gap: 32px; }
 .spread { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
-main#main { flex: 1 0 auto; padding-bottom: 64px; }
-footer.site-footer { border-top: 1px solid var(--hairline); padding: 24px 0; color: var(--fg-muted); font-size: 13px; }
+main#main { flex: 1 0 auto; display: flex; flex-direction: column; padding-bottom: var(--space-16); }
+main#main:has(> .catalog-page) { padding-bottom: 0; }
 
 @media (max-width: 599px) {
   .container { padding: 0 16px; }

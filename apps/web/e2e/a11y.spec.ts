@@ -76,7 +76,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('projects with no results', async ({ page }) => {
       await page.goto('/projects?q=zzzzqqqq');
-      await expect(page.getByRole('heading', { name: 'No projects match this search' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'No results for "zzzzqqqq"' })).toBeVisible();
       await scan(page, `no results (${scheme})`);
     });
 

@@ -1,4 +1,9 @@
 /* Projects discovery */
+.catalog-page { flex: 1; }
+.catalog-content { flex: 1; display: flex; flex-direction: column; }
+.catalog-state { flex: 1; display: grid; place-items: center; padding-block: var(--space-12); }
+.catalog-content > .catalog-results, .catalog-content > .results-skeleton { padding-bottom: var(--space-16); }
+.catalog-error { width: 100%; max-width: var(--width-error); }
 .container-read { max-width: 960px; margin-left: max(0px, calc((100% - var(--content-max)) / 2)); margin-right: auto; }
 .page-top { padding-top: var(--space-8); }
 

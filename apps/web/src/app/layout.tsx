@@ -27,9 +27,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <SiteHeader />
         <main id="main">{children}</main>
         <footer className="site-footer">
-          <div className="container">
-            Localfirst.sh · Counts shown on this site are request counts, not installs or people.{' '}
-            <a href="/privacy">Privacy</a>
+          <div className="container footer-content">
+            <p>© {new Date().getFullYear()} Localfirst.sh</p>
+            <nav aria-label="Footer">
+              <a href="/docs">Docs</a>
+              <a href="https://github.com/localfirstdotsh/localfirst">GitHub</a>
+              <a href="/privacy">Privacy</a>
+            </nav>
           </div>
         </footer>
       </body>
