@@ -23,7 +23,7 @@ projects:
                 value: production
               - key: LOG_LEVEL
                 value: info
-              # Cloudflare in front of Render's private load balancer
+              # Render's edge (Cloudflare-operated) in front of its private load balancer
               # (apps/api/src/http/client-ip.ts). Confirm Render's proxy addresses on
               # the first deploy and narrow `private` if they differ. The website must call
               # this API over Render's private network and forward each visitor's address
@@ -137,10 +137,12 @@ projects:
               # URLs and the sitemap.
               - key: LOCALFIRST_SITE_URL
                 sync: false
-              # The header Cloudflare sets with the visitor's address. Cloudflare overwrites it, so a
-              # visitor cannot choose it. Leave the proxy on, or this value is untrustworthy.
-              - key: LOCALFIRST_CLIENT_IP_HEADER
-                value: cf-connecting-ip
+              # LOCALFIRST_CLIENT_IP_HEADER is deliberately NOT set. Render's edge passes a
+              # visitor-sent `cf-connecting-ip` through unchanged (tested on staging, 2026-10-18), so
+              # naming it would let anyone choose their own rate-limit allowance. Until a header the
+              # edge sets or overwrites is found, every visitor shares the website's one allowance
+              # (docs/operations/RUNBOOK.md "Staging on Render", step 5). Removing a key here does not
+              # delete it from the service: delete it in the dashboard too.
               # Setup instructions appear only when the CLI is released and tested. Until then
               # the site says it is not available yet. Do not set these early:
               #   LOCALFIRST_CLI_RELEASED, LOCALFIRST_CLI_VERSION,
