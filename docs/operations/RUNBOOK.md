@@ -28,8 +28,11 @@ Per-ingress quotas key on the client address, which the app resolves itself.
   read from the right. Trusted proxies are skipped, and the first other address
   is the client. Entries a caller adds to the left of the last trusted hop are
   never believed.
-- **Behind Cloudflare and Render:** `TRUSTED_PROXIES=cloudflare,private`. A
-  request that bypasses Cloudflare is counted by its own address.
+- **On Render:** `TRUSTED_PROXIES=cloudflare,private`. Render's own edge runs
+  on Cloudflare and reaches services through a private load balancer; there is
+  no Cloudflare proxy of ours in front (DNS is in Vercel). A request that
+  arrives another way is counted by its own address. Confirm the chain on the
+  first deploy ("Staging on Render", step 5).
 - **Better Auth:** it receives the resolved address in an internal header that
   the app overwrites on every auth request, so its own rate limits use the
   same rule.
@@ -119,11 +122,23 @@ To create it (once, after `render.yaml` is on `staging`):
    - **Generated secrets:** Render generates `AUTH_SECRET` and
      `METRICS_TOKEN` itself. Never regenerate `AUTH_SECRET` casually: it signs
      sessions and encrypts the stored signing keys.
-3. **Custom domains:** add the staging API domain to the API service and the
-   staging website domain to the website service in Render, and create the
-   matching Cloudflare DNS records. Leave the record DNS-only
-   until Render has verified the domain and issued its certificate. Then turn
-   on the Cloudflare proxy with SSL/TLS mode **Full (strict)**.
+3. **Custom domain:** DNS for `localfirst.sh` is managed in Vercel
+   (nameservers `ns1.vercel-dns.com` and `ns2.vercel-dns.com`); only DNS is
+   there, the staging website runs on Render.
+   - Add `staging.localfirst.sh` to the **website** service only. The API gets
+     no public domain: the website proxies API, auth and MCP requests to it over
+     the private network.
+   - In Vercel (Domains → `localfirst.sh` → DNS Records, or the CLI), create
+     the CNAME `staging` → the website's `.onrender.com` hostname:
+     `vercel dns add localfirst.sh staging CNAME localfirst-staging-web.onrender.com`.
+     An explicit record overrides Vercel's default `*` record.
+   - Render verifies the domain and issues the certificate itself; there is no
+     proxy or TLS mode to set in Vercel.
+   - Set `API_BASE_URL` and `WEBSITE_URL` (environment group) and
+     `LOCALFIRST_PUBLIC_API_URL` and `LOCALFIRST_SITE_URL` (website) to
+     `https://staging.localfirst.sh`, point the staging GitHub OAuth app's
+     callback at `https://staging.localfirst.sh/api/auth/callback/github`, and
+     redeploy the API, worker and website.
 4. **Check the first deploy:**
    - **API:** the pre-deploy step logs `migrations applied`, `/health/ready`
      reports `ready`, and the startup log shows `env: production` and the
@@ -146,9 +161,13 @@ To create it (once, after `render.yaml` is on `staging`):
    should see "registry unavailable" caused by the other. If they do, the API is
    treating the website as one client: check that `LOCALFIRST_API_URL` is the
    private address (a public proxied address makes the proxy append the
-   website's own address), that `cf-connecting-ip` is present on requests (the
-   Cloudflare proxy is on), and that the website's private address is covered by
-   `TRUSTED_PROXIES`.
+   website's own address), that the header named by
+   `LOCALFIRST_CLIENT_IP_HEADER` carries the visitor's address, and that the
+   website's private address is covered by `TRUSTED_PROXIES`. The header is only
+   safe if Render's edge overwrites a value the visitor sends: send requests with
+   a made-up `cf-connecting-ip` and check that they still share the sender's
+   allowance. If they do not, unset `LOCALFIRST_CLIENT_IP_HEADER` until a
+   trustworthy header is found.
 
 Deploys then follow pushes to `staging` (`autoDeployTrigger: commit`). Each
 service rebuilds only when its own sources, contracts, workspace, or Blueprint
