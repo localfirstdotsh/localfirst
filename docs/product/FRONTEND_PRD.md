@@ -374,6 +374,10 @@ P0 `/builds` can explain the concept and link to documentation; it does not show
 
 A global searchable builds list is optional and blocked on FE-API-03. Frontend mockups showing several projects together are design previews, not an existing aggregation contract.
 
+Until global discovery is available, the Builds entry uses “Build discovery is coming soon”
+with a “Browse projects” action. This describes the unavailable site-wide catalog, not the
+existing project-scoped public-build API, and makes no claim that no public builds exist.
+
 Rows show project/version, configuration, selected model/runtime, coarse hardware, changes, visibility/review/evidence state, and outcome only when a report exists. A saved configuration says “Run not reported” if there is no observation. Do not infer success from its presence.
 
 ### 8.2 Build detail
@@ -800,12 +804,22 @@ Requirements include semantic headings/landmarks, accessible names and roles, no
 | API | Rate limited | Honor Retry-After; no aggressive loop |
 | API | Dependency unavailable | Safe retry/status; no fallback to fake data |
 
-The Projects results region grows within the `100dvh` flex-column page shell. Empty states are
-borderless, centered within the space below the controls, and use a muted existing glyph with
+Projects, Models, Hardware, and Builds share a discovery layout whose results region grows within
+the `100dvh` flex-column page shell. Empty states are borderless, centered within the space below
+the controls, and use a muted existing glyph with
 one relevant action. Populated results retain their normal row spacing. The shared footer uses
 the header's maximum-width container, a thin top border, a dynamic copyright year, and Docs,
 GitHub, and Privacy links that wrap on narrow screens. Request-count explanations belong beside
 usage metrics, rather than in the footer.
+
+Models introduces the page with “Explore the AI models powering local projects.” and shows
+“No models yet” after a successful empty response. Hardware uses “Discover the devices and hardware
+used to run local AI.” and “No hardware yet”. Both empty states offer “Explore projects”. Their
+page introductions remain visible during loading; failures have a separate borderless alert with
+a retry action. Discovery list reads bypass the persistent response cache so retry can recover
+immediately from malformed successful responses as well as network failures. Technical disclosures
+about model references and declared hardware remain in expandable contextual help beside populated
+lists rather than in the page introductions.
 
 ### 15.2 Error handling rules
 

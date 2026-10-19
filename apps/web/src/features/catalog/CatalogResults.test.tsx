@@ -90,7 +90,7 @@ describe('catalog result states', () => {
   it('shows a retry if checking registry availability fails', async () => {
     list.mockResolvedValueOnce(empty).mockRejectedValueOnce(new ApiUnavailableError('Offline'));
     const out = await render({ type: 'demo' });
-    expect(out).toContain('The registry is unavailable');
+    expect(out).toContain('Projects could not be loaded');
     expect(out).not.toContain('No demos yet');
   });
 
