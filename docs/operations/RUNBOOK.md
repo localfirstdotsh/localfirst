@@ -163,11 +163,15 @@ To create it (once, after `render.yaml` is on `staging`):
    private address (a public proxied address makes the proxy append the
    website's own address), that the header named by
    `LOCALFIRST_CLIENT_IP_HEADER` carries the visitor's address, and that the
-   website's private address is covered by `TRUSTED_PROXIES`. The header is only
-   safe if Render's edge overwrites a value the visitor sends: send requests with
-   a made-up `cf-connecting-ip` and check that they still share the sender's
-   allowance. If they do not, unset `LOCALFIRST_CLIENT_IP_HEADER` until a
-   trustworthy header is found.
+   website's private address is covered by `TRUSTED_PROXIES`.
+   - **Current state: forwarding is off.** A header is only safe if the edge
+     overwrites a value the visitor sends. Render's does not for
+     `cf-connecting-ip`: on 2026-10-18, 140 staging searches from one address
+     were cut off after 120 with no header, and none of 141 were cut off when
+     each carried a different made-up `cf-connecting-ip`. So
+     `LOCALFIRST_CLIENT_IP_HEADER` is unset and visitors share the website's
+     allowance. Before naming any other header, repeat that test with it: the
+     spoofed run must be cut off just like the plain one.
 
 Deploys then follow pushes to `staging` (`autoDeployTrigger: commit`). Each
 service rebuilds only when its own sources, contracts, workspace, or Blueprint
