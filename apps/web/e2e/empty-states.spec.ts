@@ -8,7 +8,7 @@ test('an empty category is centered in the results area with the footer at the v
   await expect(state).toContainText("There aren't any projects in this category yet.");
   await expect(state.getByRole('link', { name: 'Clear filters' })).toHaveCount(0);
 
-  const content = (await page.locator('.catalog-content').boundingBox())!;
+  const content = (await page.locator('.discovery-results').boundingBox())!;
   const box = (await state.boundingBox())!;
   const footer = (await page.locator('footer').boundingBox())!;
   const viewport = page.viewportSize()!;

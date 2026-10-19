@@ -9,7 +9,7 @@ import c from './constants.json' with { type: 'json' };
  */
 const SITE = `http://127.0.0.1:${c.webForwardingPort}`;
 const LIMIT = c.limitedCatalogPerMinute;
-const BLOCKED = /This search was not accepted|The shared rate limit|registry is unavailable/;
+const BLOCKED = /This search was not accepted|The shared rate limit|Projects could not be loaded/;
 
 // Visitor addresses unique to this run: the limiter groups IPv4 by /24, so each gets its own /24.
 const run = Math.floor(Math.random() * 200) + 20;
@@ -18,15 +18,17 @@ const visitor = (n: number) => `${run}.${n % 250}.7.9`;
 test.describe('rate limits are per visitor', () => {
   test.skip(({ isMobile }) => isMobile, 'server-side behaviour; one viewport is enough');
 
-  async function blocked(request: import('@playwright/test').APIRequestContext, query: string, headers: Record<string, string>) {
-    const response = await request.get(`${SITE}/projects?q=${query}`, { headers });
+  async function blocked(request: import('@playwright/test').APIRequestContext, headers: Record<string, string>) {
+    // A matching query performs one registry read, without an empty-registry probe. Discovery
+    // reads are fresh, so repeating the query must still consume the visitor's allowance.
+    const response = await request.get(`${SITE}/projects?q=local`, { headers });
     return BLOCKED.test(await response.text());
   }
 
   test('many different visitors are all served, not capped by one shared allowance', async ({ request }) => {
     const results: boolean[] = [];
     for (let i = 1; i <= LIMIT * 3; i += 1) {
-      results.push(await blocked(request, `distinct${i}`, { 'x-e2e-visitor-ip': visitor(i) }));
+      results.push(await blocked(request, { 'x-e2e-visitor-ip': visitor(i) }));
     }
     expect(results.filter(Boolean)).toHaveLength(0);
   });
@@ -34,11 +36,11 @@ test.describe('rate limits are per visitor', () => {
   test('one visitor is limited after their own allowance, and others are unaffected', async ({ request }) => {
     const me = `${run}.251.7.9`;
     const results: boolean[] = [];
-    for (let i = 1; i <= LIMIT + 5; i += 1) results.push(await blocked(request, `same${i}`, { 'x-e2e-visitor-ip': me }));
+    for (let i = 1; i <= LIMIT + 5; i += 1) results.push(await blocked(request, { 'x-e2e-visitor-ip': me }));
     expect(results.slice(0, LIMIT).every((b) => !b)).toBe(true);
     expect(results.slice(LIMIT).every(Boolean)).toBe(true);
     // A different visitor, in the same minute, is not affected.
-    expect(await blocked(request, 'someone-else', { 'x-e2e-visitor-ip': `${run}.252.7.9` })).toBe(false);
+    expect(await blocked(request, { 'x-e2e-visitor-ip': `${run}.252.7.9` })).toBe(false);
   });
 
   test('a visitor cannot choose their own bucket by sending forwarding headers', async ({ request }) => {
@@ -46,7 +48,7 @@ test.describe('rate limits are per visitor', () => {
     const results: boolean[] = [];
     for (let i = 1; i <= LIMIT + 5; i += 1) {
       results.push(
-        await blocked(request, `spoof${i}`, {
+        await blocked(request, {
           'x-e2e-visitor-ip': me,
           // Rotated on every request, as an abuser would. The site must ignore all of these.
           'x-forwarded-for': `${run + 1}.${i}.0.1`,
