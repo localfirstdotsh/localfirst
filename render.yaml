@@ -23,7 +23,7 @@ projects:
                 value: production
               - key: LOG_LEVEL
                 value: info
-              # Cloudflare in front of Render's private load balancer
+              # Render's edge (Cloudflare-operated) in front of its private load balancer
               # (apps/api/src/http/client-ip.ts). Confirm Render's proxy addresses on
               # the first deploy and narrow `private` if they differ. The website must call
               # this API over Render's private network and forward each visitor's address
@@ -137,8 +137,10 @@ projects:
               # URLs and the sitemap.
               - key: LOCALFIRST_SITE_URL
                 sync: false
-              # The header Cloudflare sets with the visitor's address. Cloudflare overwrites it, so a
-              # visitor cannot choose it. Leave the proxy on, or this value is untrustworthy.
+              # The visitor's address as set by Render's edge, which runs on Cloudflare. There is no
+              # Cloudflare proxy of ours (DNS is in Vercel), so this is only safe if Render's edge
+              # overwrites a value the visitor sends. Verify that before relying on it
+              # (docs/operations/RUNBOOK.md "Staging on Render", step 5).
               - key: LOCALFIRST_CLIENT_IP_HEADER
                 value: cf-connecting-ip
               # Setup instructions appear only when the CLI is released and tested. Until then
