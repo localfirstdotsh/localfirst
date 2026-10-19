@@ -1,19 +1,12 @@
-import { ApiContractError, ApiRequestError, ApiUnavailableError } from '../../lib/api';
-import { StatePanel } from '../../components/composites/StatePanel';
+import { ApiRequestError, ApiUnavailableError } from '../../lib/api';
+import { DiscoveryError } from '../../components/composites/DiscoveryFeedback';
 
-/** Error and empty states shared by the reference pages (FRONTEND_PRD section 15). */
-export function ReferenceError({ error, what }: { error: unknown; what: string }) {
-  if (error instanceof ApiContractError) {
-    return (
-      <StatePanel title={`The registry sent an unexpected ${what} response`} tone="warning">
-        Nothing is shown rather than guessing. Try again shortly.
-      </StatePanel>
-    );
-  }
+/** Copy belongs to the reference feature; presentation and recovery are shared with discovery. */
+export function ReferenceError({ error, what }: { error: unknown; what: 'Models' | 'Hardware' }) {
   const requestId = error instanceof ApiUnavailableError || error instanceof ApiRequestError ? error.requestId : null;
   return (
-    <StatePanel title={`${what} could not be loaded`} tone="warning" requestId={requestId}>
-      The registry is unavailable. Try again in a moment.
-    </StatePanel>
+    <DiscoveryError title={`${what} could not be loaded`}
+      description={error instanceof ApiRequestError && error.status === 429 ? 'Please wait a moment, then try again.' : 'Please try again in a moment.'}
+      retryHref={`/${what.toLowerCase()}`} requestId={requestId} />
   );
 }

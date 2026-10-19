@@ -148,12 +148,15 @@ async function request<S extends z.ZodType>(
 }
 
 const LIST_FRESHNESS_SECONDS = 60;
+// Next caches 200 responses before contract validation. Discovery retries must reach the
+// source again rather than replaying a malformed response as a failure for another minute.
+const DISCOVERY_FRESHNESS_SECONDS = 0;
 
 export function listProjects(query: CatalogQuery, limit?: number): Promise<ProjectPage> {
   const params = toApiSearchParams(query, limit);
   const qs = params.toString();
   return request(`/api/v1/projects${qs ? `?${qs}` : ''}`, projectPageSchema, {
-    revalidate: LIST_FRESHNESS_SECONDS,
+    revalidate: DISCOVERY_FRESHNESS_SECONDS,
   });
 }
 
@@ -199,11 +202,11 @@ export function checkCompatibility(projectId: string, body: unknown): Promise<As
 export const REFERENCE_LIST_LIMIT = 100;
 
 export async function listModels(): Promise<ModelReference[]> {
-  return (await request('/api/v1/models', modelListSchema, { revalidate: LIST_FRESHNESS_SECONDS })).items;
+  return (await request('/api/v1/models', modelListSchema, { revalidate: DISCOVERY_FRESHNESS_SECONDS })).items;
 }
 
 export async function listHardware(): Promise<HardwareReference[]> {
-  return (await request('/api/v1/hardware', hardwareListSchema, { revalidate: LIST_FRESHNESS_SECONDS })).items;
+  return (await request('/api/v1/hardware', hardwareListSchema, { revalidate: DISCOVERY_FRESHNESS_SECONDS })).items;
 }
 
 /** Every visible project, for the sitemap. Bounded so a huge registry cannot stall a request. */

@@ -16,9 +16,10 @@
 .panel .state-panel-title, .notice .state-panel-title { font-size: var(--text-section); }
 .panel .state-panel-title-page, .notice .state-panel-title-page { font-size: var(--text-state-page); }
 
-.empty-state { display: flex; flex-direction: column; align-items: center; gap: var(--space-6); width: 100%; max-width: var(--width-row-main); text-align: center; overflow-wrap: anywhere; }
-.empty-state h2 { font-size: var(--text-heading-section); }
-.empty-state-icon { width: var(--space-8); height: var(--space-8); color: var(--fg-muted); }
+.empty-state, .discovery-error { display: flex; flex-direction: column; align-items: center; gap: var(--space-6); width: 100%; max-width: var(--width-row-main); text-align: center; overflow-wrap: anywhere; }
+.empty-state h2, .discovery-error h2 { font-size: var(--text-heading-section); }
+.empty-state-icon { display: inline-flex; width: var(--space-8); height: var(--space-8); color: var(--fg-muted); }
+.empty-state-icon > svg { width: 100%; height: 100%; }
 
 .browser-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3); }
 .artifact-content { white-space: pre-wrap; overflow-wrap: anywhere; max-height: var(--height-document); overflow: auto; margin: 0; }

@@ -5,8 +5,8 @@ test.describe('models and hardware', () => {
   test('models explains an empty registry instead of inventing rows', async ({ page }) => {
     await page.goto('/models');
     await expect(page.getByRole('heading', { level: 1, name: 'Models' })).toBeVisible();
-    await expect(page.getByText(/no weights are hosted/i)).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'No models are referenced yet' })).toBeVisible();
+    await expect(page.getByText('Explore the AI models powering local projects.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'No models yet' })).toBeVisible();
     await expect(page.locator('.row-title')).toHaveCount(0);
   });
 
@@ -14,7 +14,9 @@ test.describe('models and hardware', () => {
     await page.goto('/hardware');
     const rows = page.locator('.row-list > li');
     expect(await rows.count()).toBeGreaterThan(1);
-    await expect(page.getByText(/declared, not measurements|not measurements/)).toBeVisible();
+    await expect(page.getByText('Discover the devices and hardware used to run local AI.')).toBeVisible();
+    await page.getByText('About this hardware information', { exact: true }).click();
+    await expect(page.getByText(/declared by project authors, not measured/)).toBeVisible();
     // Missing memory is stated, never shown as zero.
     await expect(page.getByText('Memory not supplied').first()).toBeVisible();
     await expect(page.getByText(/\b0 GiB\b/)).toHaveCount(0);

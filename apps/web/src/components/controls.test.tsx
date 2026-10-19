@@ -4,9 +4,27 @@ import { Button, buttonClassName } from './ui/Button';
 import { Input, Select, Checkbox } from './ui/FieldControl';
 import { FormField } from './composites/FormField';
 import { StatePanel } from './composites/StatePanel';
+import { EmptyState } from './composites/EmptyState';
+import { DiscoveryError, DiscoveryLoading } from './composites/DiscoveryFeedback';
 
 const html = renderToStaticMarkup;
 describe('shared controls and feedback', () => {
+  it('supports a borderless empty state with optional icon and action, without alert semantics', () => {
+    const out = html(<EmptyState title="Nothing yet" description="Published items appear here." icon={null} />);
+    expect(out).toContain('role="status"');
+    expect(out).not.toContain('<svg');
+    expect(out).not.toContain('role="alert"');
+    expect(html(<EmptyState title="Nothing yet" description="Browse the catalog." action={<a href="/projects" className={buttonClassName({ variant: 'primary' })}>Explore</a>} />)).toContain('button-primary');
+  });
+  it('announces loading and failures separately, retaining a native retry and safe request ID', () => {
+    const loading = html(<DiscoveryLoading label="models" />);
+    expect(loading).toContain('aria-busy="true"');
+    expect(loading).toContain('Loading models');
+    const error = html(<DiscoveryError title="Models could not be loaded" description="Try again shortly." retryHref="/models" requestId="req-123" />);
+    expect(error).toContain('role="alert"');
+    expect(error).toContain('href="/models"');
+    expect(error).toContain('Request ID: req-123');
+  });
   it('makes accidental form submission opt-in and prevents loading activation', () => {
     expect(html(<Button>Cancel</Button>)).toContain('type="button"');
     const submit = html(<Button type="submit" loading variant="primary">Checking…</Button>);

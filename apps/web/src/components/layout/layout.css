@@ -25,3 +25,10 @@ body > .site-header, body > .site-footer { flex-shrink:0; }
 .site-footer nav { display: flex; flex-wrap: wrap; gap: var(--space-6); }
 .site-footer a { display: inline-flex; align-items: center; min-height: var(--control-height); color: inherit; text-decoration: none; }
 .site-footer a:hover { color: var(--fg); text-decoration: underline; }
+
+/* Shared discovery pages stretch through the shell; populated lists keep their normal rhythm. */
+.discovery-page { flex: 1; }
+.discovery-results { flex: 1; display: flex; flex-direction: column; }
+.discovery-state { flex: 1; display: grid; place-items: center; padding-block: var(--space-12); }
+.discovery-results > .discovery-list { padding-bottom: var(--space-16); }
+.reference-notes summary { cursor: pointer; padding-block: var(--space-3); }

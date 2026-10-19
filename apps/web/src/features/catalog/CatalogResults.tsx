@@ -7,8 +7,9 @@ import {
 } from '../../lib/api';
 import { emptyQuery, selectedFilterCount, toPagePath, type CatalogQuery } from '../../lib/catalog-query';
 import { ProjectResult } from './ProjectResult';
-import { StatePanel } from '../../components/composites/StatePanel';
 import { EmptyState } from '../../components/composites/EmptyState';
+import { DiscoveryError } from '../../components/composites/DiscoveryFeedback';
+import { DiscoveryState } from '../../components/layout/DiscoveryPage';
 import { buttonClassName } from '../../components/ui/Button';
 import { catalogEmptyState } from './empty-state';
 
@@ -18,16 +19,7 @@ function CatalogError({ title, description, query, requestId }: {
   query: CatalogQuery;
   requestId?: string | null;
 }) {
-  return (
-    <div className="catalog-state">
-      <div className="catalog-error">
-        <StatePanel title={title} tone="warning" requestId={requestId}>
-          <p>{description}</p>
-          <p className="mt-12"><a href={toPagePath(query, { keepCursor: true })} className={buttonClassName()}>Try again</a></p>
-        </StatePanel>
-      </div>
-    </div>
-  );
+  return <DiscoveryError title={title} description={description} retryHref={toPagePath(query, { keepCursor: true })} requestId={requestId} />;
 }
 
 /** Fetches one page and renders list, empty, or error state. Keeps the query visible on failure. */
@@ -43,13 +35,13 @@ export async function CatalogResults({ query, preview = false }: { query: Catalo
       const hasProjects = narrowed && (await listProjects(emptyQuery(), 1)).items.length > 0;
       const state = catalogEmptyState(query, hasProjects);
       return (
-        <div className="catalog-state">
+        <DiscoveryState>
           <EmptyState
             title={state.title}
             description={state.description}
             action={state.action && <Link href={state.action.href} className={buttonClassName()}>{state.action.label}</Link>}
           />
-        </div>
+        </DiscoveryState>
       );
     }
 
@@ -59,7 +51,7 @@ export async function CatalogResults({ query, preview = false }: { query: Catalo
         : null;
 
     return (
-      <div className="catalog-results">
+      <div className="catalog-results discovery-list">
         {!preview && <p className="small muted result-count" role="status">
           {`${page.items.length} ${page.items.length === 1 ? 'project' : 'projects'}${query.cursor ? ' on this page' : ''}`}
         </p>}
@@ -85,12 +77,12 @@ export async function CatalogResults({ query, preview = false }: { query: Catalo
     }
     if (error instanceof ApiContractError) {
       return (
-        <CatalogError title="The registry sent an unexpected response" description="Projects could not be loaded." query={query} />
+        <CatalogError title="Projects could not be loaded" description="Please try again in a moment." query={query} />
       );
     }
     const requestId = error instanceof ApiUnavailableError ? error.requestId : null;
     return (
-      <CatalogError title="The registry is unavailable" description="Projects could not be loaded." query={query} requestId={requestId} />
+      <CatalogError title="Projects could not be loaded" description="Please try again in a moment." query={query} requestId={requestId} />
     );
   }
 }
