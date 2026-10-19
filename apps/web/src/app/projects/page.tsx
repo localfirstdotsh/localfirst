@@ -13,7 +13,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
   const { query, rejected } = parseCatalogQuery(await searchParams);
 
   return (
-    <div className="container stack gap-24 page-top">
+    <div className="container stack gap-24 page-top catalog-page">
       <header className="stack gap-8">
         <h1>Projects</h1>
         <p className="muted">Discover local AI applications, workflows, and builds.</p>
@@ -25,10 +25,12 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
         </StatePanel>
       )}
       <ActiveFilters query={query} />
-      <h2 className="visually-hidden">Results</h2>
-      <Suspense key={toPagePath(query, { keepCursor: true })} fallback={<ResultsSkeleton />}>
-        <CatalogResults query={query} />
-      </Suspense>
+      <section className="catalog-content" aria-labelledby="project-results">
+        <h2 id="project-results" className="visually-hidden">Results</h2>
+        <Suspense key={toPagePath(query, { keepCursor: true })} fallback={<ResultsSkeleton rows={2} />}>
+          <CatalogResults query={query} />
+        </Suspense>
+      </section>
     </div>
   );
 }

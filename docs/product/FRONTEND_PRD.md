@@ -783,8 +783,9 @@ Requirements include semantic headings/landmarks, accessible names and roles, no
 | --- | --- | --- |
 | Catalog | Initial loading | Stable skeleton/text; no fake badges/counters |
 | Catalog | Refetching filters | Preserve previous rows visibly as updating; ignore stale response races |
-| Catalog | No published records | Explain seed/availability state; offer docs/setup without invented community activity |
-| Catalog | No matches | Preserve filters/query; offer specific removals/Clear |
+| Catalog | No published records | Show “No projects yet” with publication guidance and no clear action; confirm registry emptiness with an unfiltered read when the original query is narrowed |
+| Catalog | Empty category | Show the selected category in “No demos yet” style with “Explore all projects” when no search or additional filters apply |
+| Catalog | No matches | Preserve query state; search takes precedence over additional filters, with “Clear search” preserving filters/sort and “Clear filters” removing filters while preserving sort; failures always have a separate retry state |
 | Catalog | Invalid filter/cursor | Explain unsupported/expired value; reset only affected state |
 | Detail | Unknown metadata | Explicit unknown/not supplied/not applicable labels |
 | Detail | Missing/inaccessible record | Safe unavailable/404 page without private existence disclosure |
@@ -798,6 +799,13 @@ Requirements include semantic headings/landmarks, accessible names and roles, no
 | Account | Signed out/session expired | Public context preserved; private data cleared; safe login continuation |
 | API | Rate limited | Honor Retry-After; no aggressive loop |
 | API | Dependency unavailable | Safe retry/status; no fallback to fake data |
+
+The Projects results region grows within the `100dvh` flex-column page shell. Empty states are
+borderless, centered within the space below the controls, and use a muted existing glyph with
+one relevant action. Populated results retain their normal row spacing. The shared footer uses
+the header's maximum-width container, a thin top border, a dynamic copyright year, and Docs,
+GitHub, and Privacy links that wrap on narrow screens. Request-count explanations belong beside
+usage metrics, rather than in the footer.
 
 ### 15.2 Error handling rules
 

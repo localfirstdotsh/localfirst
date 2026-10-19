@@ -40,7 +40,7 @@ test.describe('catalog search', () => {
 
   test('a no-match search keeps the query and explains itself', async ({ page }) => {
     await page.goto('/projects?q=zzzzqqqq');
-    await expect(page.getByRole('heading', { name: 'No projects match this search' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'No results for "zzzzqqqq"' })).toBeVisible();
     await expect(searchbox(page)).toHaveValue('zzzzqqqq');
     await expect(page.locator('.result-title')).toHaveCount(0);
     await page.getByRole('link', { name: 'Clear search' }).last().click();
@@ -49,7 +49,7 @@ test.describe('catalog search', () => {
 
   test('filters with no results get their own message and a way out', async ({ page }) => {
     await page.goto('/projects?type=documentation&runtime=vllm&evidence_level=independently_verified&os=windows');
-    await expect(page.getByRole('heading', { name: 'No projects match these filters' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'No matching projects' })).toBeVisible();
     await page.getByRole('link', { name: 'Clear filters' }).last().click();
     await expect(page).toHaveURL(/\/projects$/);
   });
