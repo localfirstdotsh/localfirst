@@ -12,7 +12,7 @@ ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true NEXT_TELEMETRY_DISABLED=1
 RUN npm install --global pnpm@12.4.1
 WORKDIR /repo
 # Manifests first, so dependency layers are cached until they change.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/contracts/package.json packages/contracts/
 COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile --filter @localfirst/web...
