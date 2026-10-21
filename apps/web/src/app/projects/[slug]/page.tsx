@@ -38,7 +38,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
     return (
       <PageContainer top="standard">
         <StatePanel title="This project could not be loaded" tone="warning" level="h1">
-          The registry is unavailable. <Link href="/projects">Back to projects</Link>
+          The registry is unavailable. <Link href="/docs">Read the docs</Link>
         </StatePanel>
       </PageContainer>
     );
@@ -52,7 +52,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
   return (
     <PageContainer gap={32} top="detail">
       <nav aria-label="Breadcrumb" className="small muted">
-        <Link href="/projects">Projects</Link> / <span>{project.name}</span> /{' '}
+        <Link href="/">Home</Link> / <span>{project.name}</span> /{' '}
         <span className="mono">v{current.spec_version}</span>
       </nav>
 

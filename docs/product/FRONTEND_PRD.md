@@ -1,7 +1,7 @@
 # Localfirst.sh Frontend UI Product Requirements Document
 
-**Version:** 0.2 · October 15, 2026\
-**Status:** Proposed UI requirements; documentation only, no production frontend implemented.  
+**Version:** 0.3 · October 20, 2026\
+**Status:** UI requirements; the public launch centers on commands, documentation, and shared project references.\
 **Product:** Localfirst.sh — The home of local AI.  
 **Companion documents:** [RESEARCH.md](RESEARCH.md), [BACKEND_PRD.md](BACKEND_PRD.md)  
 **Package and CLI:** `localfirstdotsh`  
@@ -9,7 +9,9 @@
 
 This document turns the agreed registry concept into screen, interaction, state, and integration requirements. The frontend helps people inspect knowledge that their agents can also access. Agent publishing, discovery, and local execution remain first-class workflows; the website is not a required manual authoring portal.
 
-The reviewed concept establishes direction: restrained registry chrome, a prominent MCP setup command, compact searchable project records, related model/hardware/build views, and project details with explicit evidence and test support. Prototype records, model inventories, commands, and report outcomes are illustrative. Production must use real contracts and released capabilities, with no example data or simulated connection/test states presented as live activity.
+The public launch has a restrained shell, one copyable connection command, AI-tool setup links, and documentation. Access is open to everyone, with GitHub sign-in for contributions; there is no invitation requirement. Creators distribute project references through their existing channels. The homepage and navigation do not expose project previews, search, model/hardware directories, or a builds directory. Existing catalog screens are retained only as explicit previews (`LOCALFIRST_CATALOG_PREVIEW=true`); otherwise their root routes redirect to `/docs`. Shared project and exact-version URLs remain readable under existing visibility rules. This launch decision takes precedence over the catalog proposals below. GitHub-username lookup in the CLI requires a separately implemented contract and must not be advertised as available before it exists. The future engineer-services marketplace is outside this frontend change.
+
+Prototype records, model inventories, commands, and report outcomes are illustrative. Production must use real contracts and released capabilities, with no example data or simulated connection/test states presented as live activity.
 
 ## Contents
 
@@ -43,13 +45,13 @@ The reviewed concept establishes direction: restrained registry chrome, a promin
 
 The website answers: what is this project, which models/runtimes/hardware does it reference, what has actually been reported, and what can my agent or local runner do next?
 
-The main conversion is a useful connection or reproducible action, not account creation, feed engagement, or a model download. A visitor can browse and retrieve public specifications without logging in. The local runner can test a public saved specification without a Localfirst account. Contribution requires identity and explicit permissions.
+The main conversion is a useful connection or reproducible action, not account creation, feed engagement, or a model download. A visitor can read documentation and retrieve a shared public specification without logging in. The local runner can test a public saved specification without a Localfirst account. Contribution requires identity and explicit permissions.
 
 ### 1.2 Primary audiences
 
 | Audience | Main intent | UI priority |
 | --- | --- | --- |
-| Agent user | Add Localfirst to an existing client | Setup command and tested connection instructions above the catalog |
+| Agent user | Add Localfirst to an existing client | Setup command and tested connection instructions on the landing page |
 | Builder | Find or adapt a project for owned hardware/models | Structured search, provenance, requirements, supported tests |
 | Hardware/edge developer | Understand device/software configurations | Hardware-linked projects, manual builds, version-specific notes |
 | Contributor | Share a project, build, or sanitized report | Agent-first preparation and exact-artifact human review |
@@ -71,7 +73,7 @@ The main conversion is a useful connection or reproducible action, not account c
 
 ### 1.4 Success measures
 
-Measure successful tested MCP connections when observable, setup completion feedback, useful catalog-to-project/spec retrieval, completed human draft reviews, and publication correction/conflict rates. Phase 2 adds runner handoff usefulness and voluntarily submitted reports; Phase 3 adds eligible independent reproductions.
+Measure successful tested MCP connections when observable, setup completion feedback, useful shared-reference-to-project/spec retrieval, completed human draft reviews, and publication correction/conflict rates. Phase 2 adds runner handoff usefulness and voluntarily submitted reports; Phase 3 adds eligible independent reproductions.
 
 A copied command is not a completed MCP connection. A selected runtime is not a reachable runtime. A website visit is not an observed local test. Do not infer offline success or all local activity from registry submissions.
 
@@ -82,11 +84,11 @@ Priorities match the backend: **P0 / Phase 1 registry**, **P1 / Phase 2 local te
 | ID | Priority | Requirement |
 | --- | --- | --- |
 | FE-001 | P0 | Command-first entry page with released/verified MCP setup and `localfirstdotsh` naming |
-| FE-002 | P0 | Shared navigation for Projects, Models, Hardware, Builds, Docs, and contribution entry |
-| FE-003 | P0 | Public project search, facet filters, shareable URLs, cursor pagination, and honest counts |
+| FE-002 | P0 | Shared Docs navigation and GitHub sign-in; no public catalog navigation |
+| FE-003 | Preview | Retained project search, facet filters, shareable URLs, cursor pagination, and honest counts; explicit preview deployment only |
 | FE-004 | P0 | Project detail, source attribution, requirements, limitations, data boundaries, and spec export |
 | FE-005 | P0 | Exact project-version navigation; historical versions cannot silently become current |
-| FE-006 | P0 | Thin Models/Hardware reference catalogs linking back into project discovery |
+| FE-006 | Preview | Thin Models/Hardware catalogs, available only with the explicit catalog preview setting |
 | FE-007 | P0 | Browser login, narrow agent consent, connection management, and sign-out |
 | FE-008 | P0 | Agent-first Publish page and owner draft review with enforced exact-artifact approval |
 | FE-009 | P0 | Source-independent project presentation, including authored specifications/hardware notes |
@@ -104,7 +106,7 @@ Priorities match the backend: **P0 / Phase 1 registry**, **P1 / Phase 2 local te
 | FE-021 | P1 | Environment creation guide with a versioned starter, complete bakery example, copyable AI authoring brief, and shared-schema validation guidance |
 | FE-022 | P1 | Customer setup guide with per-integration readiness, prerequisites, private configuration, review/test steps, and troubleshooting |
 
-Builds appears in the long-term navigation but does not expose fictional results in P0. It can lead to a clearly informational explanation until actual build records/routes are available. In P1, start with project-scoped lists; a global builds directory requires the additive contract in section 22.
+Builds remains a preview-only route during this launch and does not expose fictional results in P0. It can lead to a clearly informational explanation until actual build records/routes are available. In P1, start with project-scoped lists; a global builds directory requires the additive contract in section 22.
 
 Outside initial scope: a full browser code editor, model-weight hosting/download management, arbitrary local HTTP connections, an agent IDE, cloud inference chat, business dashboards, social feeds/upvote ranking, payments, an integrator marketplace, or an unrestricted benchmark upload portal.
 
@@ -114,10 +116,8 @@ Outside initial scope: a full browser code editor, model-weight hosting/download
 
 ```mermaid
 flowchart TD
-    Home[Home: setup command and project catalog] --> Projects[Projects and exact versions]
-    Home --> Models[Model references]
-    Home --> Hardware[Hardware references]
-    Home --> Builds[Builds: phase-gated]
+    Home[Home: setup command and documentation] --> Docs[Documentation]
+    Shared[Shared project reference] --> Projects[Projects and exact versions]
     Projects --> Spec[Portable documentation and source]
     Projects --> Tests[Test definitions and local handoff]
     Projects --> Related[Related models, hardware, builds]
@@ -136,13 +136,13 @@ These are **frontend routes**, not new API endpoints. The public application and
 
 | Route | Phase | Access | Purpose |
 | --- | --- | --- | --- |
-| `/` | P0 | Public | Setup-led landing page with initial project catalog |
-| `/projects` | P0 | Public | Full searchable catalog; shareable query/filter state |
+| `/` | P0 | Public | Commands, setup links, AI-tool integrations, and documentation; no catalog |
+| `/projects` | Preview | Explicit catalog preview only | Redirects to `/docs` by default; preview retains search/filter behavior |
 | `/projects/:slug` | P0 | Public visible record | Current published project detail |
 | `/projects/:slug/versions/:version_id` | P0 | Public visible version | Exact immutable version detail |
-| `/models` | P0 | Public | Model references and links to matching projects |
-| `/hardware` | P0 | Public | Hardware descriptors and related project filters |
-| `/builds` | Informational P0; P1 scoped | Public | Explanation initially; real project-selected browsing in P1 |
+| `/models` | Preview | Explicit catalog preview only | Redirects to `/docs` by default |
+| `/hardware` | Preview | Explicit catalog preview only | Redirects to `/docs` by default |
+| `/builds` | Preview | Explicit catalog preview only | Redirects to `/docs` by default |
 | `/builds/:build_id` | P1 | Public safe view or owner | Configuration, changes, provenance, and associated reports |
 | `/test-results/:result_id` | P1 | Public safe view or owner | Scope, outcomes, measurement methods, review state |
 | `/publish` | P0 | Public guidance; login for private actions | Not linked from navigation. Reachable from docs and agent-provided links; agent-first contribution instructions and existing draft entry |
@@ -189,9 +189,9 @@ Login is not requested for public browsing, source inspection, spec export, or s
 
 ### 4.1 Entry-page hierarchy
 
-The first viewport contains the wordmark/navigation, concise positioning, MCP setup command with Copy, a tested client selector/instructions, and a compact preview linking into searchable project records. Avoid a large marketing hero that pushes setup/catalog below the fold.
+The homepage follows the hero-only composition in `RidwanG206/localfirst-web/app/page.tsx`: a viewport-height lime gradient and dot grid, an oversized `localfirst` wordmark on the left, and concise positioning with the real MCP setup command on the right. The copy sits lower than the wordmark. On small screens the blocks stack and center. The homepage retains the shared navbar, styled in ink on lime with the existing mobile Menu disclosure, fading in after the intro and hero reveal have settled, and omits the footer and project preview. Connect your agent and Read the docs lead into the existing website. Internal pages retain the shared navigation and footer.
 
-Primary title: **The home of local AI.** Supporting text: **Projects, models, hardware, and working configurations. Connected by evidence.** Primary public action is connecting an existing agent. There is no Publish button or nav item: publishing happens only through the connected agent over MCP/API. People reach the human review page from a link their agent gives them, and publishing guidance lives in `/docs/connect`.
+The wordmark is the primary heading. Positioning: **The home of local AI.** Supporting text: **Build, test and share AI projects that run on your hardware.** Position Localfirst around reusable local-AI projects, owned hardware, and the information needed to reproduce a project. The primary public action, **Connect your agent**, leads to `/docs/connect`. There is no Publish button or nav item: publishing happens only through the connected agent over MCP/API. People reach the human review page from a link their agent gives them, and publishing guidance lives in `/docs/connect`.
 
 ### 4.2 Setup command contract
 
@@ -237,6 +237,8 @@ Keep navigation and a compact “Connect your agent” entry on all public pages
 No sticky header or bottom bar may cover focused fields, tab content, or approval buttons. Use the shared dark-first appearance, with forced-colors and reduced-motion support.
 
 ## 5. Project catalog, search, and filters
+
+These retained browser capabilities are preview-only. Read `LOCALFIRST_CATALOG_PREVIEW` at request time; unset, false, or any other value leaves the public catalog closed. A user-supplied query cannot enable it. CLI/API/MCP retrieval and existing visibility/authentication rules are unchanged.
 
 ### 5.1 List anatomy
 
@@ -297,7 +299,7 @@ Not every desktop facet needs permanent mobile expansion. Evidence and test supp
 
 ### 6.1 Header and tabs
 
-Header: title, original author/curator relationship, project type/category, selected project version, source type, evidence summary, and next actions. Use a breadcrumb back to the originating catalog. A curated listing shows original creator/source separately from the Localfirst submitter; no implied endorsement or maintainer ownership.
+Header: title, original author/curator relationship, project type/category, selected project version, source type, evidence summary, and next actions. Use a Home breadcrumb and preserve links to the shared project and its versions; do not send visitors into a catalog. A curated listing shows original creator/source separately from the Localfirst submitter; no implied endorsement or maintainer ownership.
 
 P0 tabs: Overview, Requirements, Documentation, Versions. Test declarations can be a labeled section before executable test APIs ship. P1 adds Tests and Builds/Results. P2 adds Derivatives and eligible comparisons. Empty supported tabs explain the absence; out-of-phase tabs are hidden or clearly informational, not clickable fake data views.
 
@@ -687,9 +689,9 @@ Operator screens, if added, require server-confirmed roles and use safe state/re
 
 ### 13.1 Design direction
 
-A minimal, dark-first developer registry. Self-hosted Inter is the primary family for headings, body, and controls; system monospace is reserved for commands and identifiers. Near-black backgrounds, neutral surfaces, subtle separators, and restrained lime emphasis establish hierarchy without gradients, glows, decorative metrics, or shadows.
+The homepage uses the lime-and-ink design from `RidwanG206/localfirst-web`: `#B8F24A` to `#A1CB4A`, ink `#171518`, a 37px dot grid, an asymmetric oversized wordmark, and contained animated particles. A drawn-mark intro reveals the centered wordmark, then settles it into the final composition. Reduced motion skips the intro and renders particles as a static frame. Keyboard focus or resizing ends the intro immediately and exposes the navbar. Reduced motion shows the navbar immediately. Without JavaScript, the final composition and links remain visible. A custom difference-blend cursor is limited to fine pointers on the homepage. Internal pages retain the dark developer registry design. Self-hosted Inter is the primary family; system monospace is reserved for commands, identifiers, and the homepage eyebrow.
 
-The homepage uses a two-column introduction headed “The home of local AI.”, followed by a compact connection command and verified AI CLI integrations. It previews four recently updated projects using the directory’s shared project rows, with one link into full discovery. The directory owns search, category navigation, advanced filters, sorting, and pagination. Displayed counts describe the loaded page rather than an invented total.
+The homepage pairs the wordmark with “The home of local AI.”, one copyable connection command, Connect your agent and Read the docs links, and compact AI-tool integrations. It does not fetch or preview catalog records, and there are no project rows, catalog links, search boxes, invitation controls, or engineer-services features. The command comes from validated release configuration; an unreleased deployment instead shows the source CLI command and links to build/setup instructions. The header links to Docs and Sign in. Retained preview directories own their existing search/filter behavior but are not linked from the public shell.
 
 The package is `localfirstdotsh`; the supported MCP registration syntax requires `mcp add --client claude-code|codex|gemini-cli`. The source implementation is `packages/runner/src/cli/commands/mcp.ts`. A released deployment may advertise its explicitly configured command. Before npm publication, show a working `node packages/runner/dist/cli/bin.js mcp add --client … --registry …` command with source-build prerequisites in the connection guide, instead of a prominent unavailable warning. Node.js 22+, an installed client, an interactive terminal, explicit registration confirmation, and client-owned OAuth sign-in are required. Do not claim that copying configures a client. Claude Code, Codex CLI, and Gemini CLI have implemented registration profiles. Gemini uses HTTP transport with explicit user/project scope and `/mcp auth localfirst` for client-owned OAuth; do not enable `--trust`. Cursor CLI/editor and OpenCode use documented native configuration with copyable JSON and their own authentication commands (`agent mcp login localfirst`, `opencode mcp auth localfirst`). Config URLs must come from the registry’s protected-resource metadata, match the configured public API origin, and carry no credentials/query/fragment. On discovery failure, show a retry state instead of guessed configuration. Keep config integrations out of the automatic CLI selector; the shared integration group links all eight to specific instructions under “Works with AI tools,” covering CLI and editor surfaces. Copilot CLI uses `mcpServers` with `type: http`, `url`, and `tools`; use `/mcp auth localfirst` inside Copilot for browser sign-in. Windsurf guidance targets Cascade with `serverUrl`, using the config file opened by the installed app; distinguish newer Devin Local setups. Cline uses `type: streamableHttp` explicitly (omission defaults to legacy SSE), `disabled: false`, and an empty `autoApprove` list. All five native-configuration integrations reuse `McpConfigBlock` and the discovered endpoint, with no invented Localfirst registration flags. Preserve users’ existing settings by instructing them to merge only the localfirst entry. Aider and Goose remain excluded. Ollama and LM Studio are separate source-runner adapters, not MCP hosts installed by registration.
 
@@ -700,7 +702,7 @@ The root Next.js website owns all browser pages, including sign-in, consent, acc
 
 `apps/web/src/design-system/tokens.css` is the canonical palette and type/spacing scale; do not duplicate literal palettes in components. Background/surface/raised/hover are `#0A0A0A`, `#111111`, `#171717`, `#1D1D1D`; ordinary borders are `#262626` and `#383838`, with a separate higher-contrast control border. Text uses `#F5F5F5`, secondary `#A3A3A3`, and muted `#858585`. Lime `#D7FF3F` identifies the brand, selection, and focus; ordinary links inherit a neutral foreground and remain underlined in prose. Success, warning, danger, information, disabled, and focus have separate semantic tokens. Status always includes a textual label. Forced colors and reduced motion remain supported.
 
-Typography: hero 44–72px responsive, page titles 32–44px at weight 650, sections 24px, row titles 17px, body 15px, metadata 13px, and short eyebrow labels 11px. Headings share Inter with controlled tracking and line height. Inputs, buttons, and menus inherit UI typography. Spacing uses 4, 8, 12, 16, 24, 32, 48, and 64px; controls are 44px high with 8px radii. The catalog and header share a centered 1200px container. Reading pages keep that left edge with a shorter measure.
+Typography: homepage wordmark 64–260px (44–118px on mobile), homepage lede 20–32px, page titles 32–44px at weight 650, sections 24px, row titles 17px, body 15px, metadata 13px, and short eyebrow labels 11px. Headings share Inter with controlled tracking and line height. Inputs, buttons, and menus inherit UI typography. Spacing uses 4, 8, 12, 16, 24, 32, 48, and 64px; controls are 44px high with 8px radii. The catalog and header share a centered 1200px container. Reading pages keep that left edge with a shorter measure.
 
 The mobile navigation is a disclosure with an explicit Menu button, Escape dismissal and focus return, and real links. Active routes use an underline plus `aria-current`; Home does not mark Projects as its current page. Header focus tracks pointer versus intentional keyboard input: modifier-only keys do not change modality, so Chromium’s Shift heuristic cannot add an outline to a clicked link. Tab and Shift+Tab retain visible keyboard focus. Shared Select controls support arrow keys, Home/End, typeahead, Enter/Space, Escape, Tab, and outside dismissal; values submit through hidden form inputs.
 
@@ -965,7 +967,7 @@ Bound Markdown/media, paginate lists, cancel stale requests, and defer optional 
 
 ### 18.3 Public metadata/indexing
 
-Use factual page titles/descriptions, stable canonical project/version URLs, meaningful links, and sitemaps of visible public records. Keep historical version pages clearly identified; do not canonicalize an exact-version evidence link to unrelated current content. Decide filter-page indexing deliberately to avoid an unlimited crawl space.
+Use factual page titles/descriptions, stable canonical shared-project/version URLs, and meaningful links. The sitemap lists the homepage, privacy, docs hub, and public guides only; it never enumerates projects or catalog routes and does not read the registry. Preview catalog pages are noindex. Shared public project URLs remain directly accessible; absence from the sitemap is not an access control. Keep historical version pages clearly identified; do not canonicalize an exact-version evidence link to unrelated current content. Decide filter-page indexing deliberately to avoid an unlimited crawl space.
 
 Private drafts/results/account/consent/review/operator pages are excluded from public indexing and previews, with actual auth controls in addition to robots directives. Hidden/quarantined records follow backend safe visibility policy. No fabricated ratings, benchmark totals, or structured-data review claims.
 
@@ -993,7 +995,7 @@ These are future product tests, not claims that a production UI already passes. 
 
 ### 20.1 Phase 1 public registry
 
-- Setup instructions and the start of real catalog content appear in the first practical desktop viewport; mobile retains a prominent usable command/action.
+- The connection command and documentation links appear in the first practical desktop viewport; mobile retains a usable copy action and no horizontal overflow. No project previews or public directory links appear.
 - The package/executable is `localfirstdotsh` everywhere; no obsolete scoped package or stale CLI name remains.
 - Production package commands are released/tested for the chosen client; source-build commands identify prerequisites and unsupported choices cannot imply successful setup.
 - Copy emits exact command text and reports success only after clipboard success; manual fallback works without reading the clipboard.

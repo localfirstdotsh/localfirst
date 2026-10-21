@@ -2,7 +2,7 @@
   "name": "@localfirst/web",
   "version": "0.2.0",
   "private": true,
-  "description": "Localfirst.sh public website: command-first registry catalog (FRONTEND_PRD).",
+  "description": "Localfirst.sh public website: commands, documentation, and shared project references (FRONTEND_PRD).",
   "type": "module",
   "engines": {
     "node": ">=22"

@@ -9,7 +9,7 @@ const CLIENTS = [
 test('all integrations load their mark and link to the corresponding instructions', async ({ page }) => {
   for (const [label, id] of CLIENTS) {
     await page.goto('/');
-    const link = page.locator('.integration-list').getByRole('link', { name: label, exact: true });
+    const link = page.locator('.integration-row').getByRole('link', { name: label, exact: true });
     expect(await link.locator('img').evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await link.click();
     await expect(page).toHaveURL(new RegExp(`/docs/connect#${id}$`));
@@ -19,11 +19,12 @@ test('all integrations load their mark and link to the corresponding instruction
 
 test('source setup offers the real Gemini registration command and copies it exactly', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.goto(`${WEB_UNRELEASED}/`);
+  await page.goto(`${WEB_UNRELEASED}/docs/connect`);
   await page.getByRole('button', { name: 'Gemini CLI', exact: true }).click();
-  const command = await page.locator('.command-line code').textContent();
+  const setup = page.locator('.setup-section');
+  const command = await setup.locator('.command-line code').textContent();
   expect(command).toContain('mcp add --client gemini-cli --registry');
-  await page.getByRole('button', { name: 'Copy', exact: true }).click();
+  await setup.getByRole('button', { name: 'Copy', exact: true }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(command);
   await expect(page.getByRole('button', { name: 'Cursor', exact: true })).toHaveCount(0);
   for (const name of ['OpenCode', 'GitHub Copilot', 'Windsurf', 'Cline']) await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
