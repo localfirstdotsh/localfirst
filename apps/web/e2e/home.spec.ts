@@ -73,7 +73,7 @@ test.describe('home page content', () => {
     await expect(page.locator('.site-footer')).toBeHidden();
     await expect(page.getByRole('link', { name: 'Get started', exact: false })).toHaveAttribute('href', '/docs/connect');
     await expect(page.getByRole('link', { name: 'Read the docs', exact: true })).toHaveAttribute('href', '/docs');
-    await expect(page.getByText('Open to everyone. Sign in with GitHub when you contribute.')).toBeVisible();
+    await expect(page.getByText('Open to everyone. Sign in with GitHub when you contribute.')).toHaveCount(0);
     await page.getByRole('link', { name: 'Read the docs', exact: true }).click();
     await expect(page.locator('.site-header')).toBeVisible();
     await expect(page.locator('.site-footer')).toBeVisible();

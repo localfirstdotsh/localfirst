@@ -56,8 +56,13 @@ test('mobile navigation opens, follows real routes, and returns focus on Escape'
   const button = page.getByRole('button', { name: 'Menu', exact: true });
   const nav = page.getByRole('navigation', { name: 'Primary' });
   await expect(nav).toBeHidden();
+  await expect(button).toHaveText('');
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeHidden();
   await button.click();
   await expect(nav).toBeVisible();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  await expect(nav.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(button).toBeFocused();
   await expect(nav).toBeHidden();

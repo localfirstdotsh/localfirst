@@ -149,7 +149,6 @@ body:has(.landing[data-intro='running']) > .site-header { animation: landing-nav
 .landing .integration-row img { filter: none; opacity: .85; }
 .landing .integration-row a:hover img, .landing .integration-row a:focus-visible img { opacity: 1; }
 .landing .integration-row a::after { border-color: var(--landing-ink); background: var(--landing-ink); color: var(--landing-lime); }
-.landing-access { margin-top: 16px; font-size: 12px; line-height: 1.5; color: var(--landing-muted); }
 @media (max-width: 640px) {
   .landing .integration-row { justify-content: center; margin-inline: auto; }
 }
