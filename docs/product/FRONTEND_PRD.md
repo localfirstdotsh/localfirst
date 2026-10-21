@@ -191,7 +191,7 @@ Login is not requested for public browsing, source inspection, spec export, or s
 
 The first viewport contains the wordmark/navigation, concise positioning, MCP setup command with Copy, a connection-guide link, and compact AI-tool integrations linking to client-specific instructions. Keep the command prominent; project discovery remains available through connected agents and shared references rather than a homepage catalog.
 
-Primary title: **The home of local AI.** Supporting text: **Build, test, and share AI projects that run on hardware you own. Connect your agent to project specs, model requirements, and setup instructions.** Position Localfirst around reusable local-AI projects, owned hardware, and the information needed to reproduce a project. The primary public action, **Connect your agent**, leads to `/docs/connect`. There is no Publish button or nav item: publishing happens only through the connected agent over MCP/API. People reach the human review page from a link their agent gives them, and publishing guidance lives in `/docs/connect`.
+Primary title: **The home of local AI.** Supporting text: **Build and share AI projects that run on your hardware.** Position Localfirst around reusable local-AI projects, owned hardware, and the information needed to reproduce a project. The primary public action, **Connect your agent**, leads to `/docs/connect`. There is no Publish button or nav item: publishing happens only through the connected agent over MCP/API. People reach the human review page from a link their agent gives them, and publishing guidance lives in `/docs/connect`.
 
 ### 4.2 Setup command contract
 

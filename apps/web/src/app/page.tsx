@@ -13,7 +13,7 @@ export default function HomePage() {
     <div className="container stack home">
       <section aria-labelledby="hero" className="hero">
         <h1 id="hero">The home of local AI<span className="hero-period">.</span></h1>
-        <p className="hero-subtitle">Build, test, and share AI projects that run on hardware you own. Connect your agent to project specs, model requirements, and setup instructions.</p>
+        <p className="hero-subtitle">Build and share AI projects that run on your hardware.</p>
         <div className="hero-cli"><CopyBlock text={command} note={setup.state === 'available'
           ? 'Run in your terminal to connect your agent. Requires Node.js 22+.'
           : 'Run from a built repository checkout. Requires Node.js 22+.'} /></div>
