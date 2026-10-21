@@ -5,10 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const LINKS = [
-  { href: '/projects', label: 'Projects' },
-  { href: '/models', label: 'Models' },
-  { href: '/hardware', label: 'Hardware' },
-  { href: '/builds', label: 'Builds' },
   { href: '/docs', label: 'Docs' },
 ] as const;
 const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock']);

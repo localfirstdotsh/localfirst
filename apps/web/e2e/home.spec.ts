@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { clipboardText, selectedText, SETUP_COMMAND, WEB_UNRELEASED } from './helpers';
+import { clipboardText, selectedText, SETUP_COMMAND, WEB_UNRELEASED, OWNER_SLUG } from './helpers';
 
 test.describe('home setup command', () => {
   test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
-  test('shows the configured setup command with no client selector', async ({ page }) => {
+  test('shows the configured connection command with no client selector', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('group', { name: 'Agent client' })).toHaveCount(0);
     await expect(page.locator('.command-line code')).toHaveText(SETUP_COMMAND);
@@ -64,14 +64,16 @@ test.describe('home page content', () => {
     }
   });
 
-  test('shows the hero, navbar, and links to real setup and documentation', async ({ page }) => {
+  test('offers commands and docs without catalog links or project previews', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'localfirst', exact: true })).toBeVisible();
     await expect(page.locator('.result-title')).toHaveCount(0);
     await expect(page.getByRole('searchbox')).toHaveCount(0);
-    await expect(page.locator('.site-header')).toBeVisible();
+    await expect(page.locator('a[href="/projects"], a[href="/models"], a[href="/hardware"], a[href="/builds"]')).toHaveCount(0);
     await expect(page.locator('.site-footer')).toBeHidden();
     await expect(page.getByRole('link', { name: 'Get started', exact: false })).toHaveAttribute('href', '/docs/connect');
+    await expect(page.getByRole('link', { name: 'Read the docs', exact: true })).toHaveAttribute('href', '/docs');
+    await expect(page.getByText('Open to everyone. Sign in with GitHub when you contribute.')).toBeVisible();
     await page.getByRole('link', { name: 'Read the docs', exact: true }).click();
     await expect(page.locator('.site-header')).toBeVisible();
     await expect(page.locator('.site-footer')).toBeVisible();
@@ -88,10 +90,24 @@ test.describe('home page content', () => {
     await expect(header).toHaveCSS('opacity', '1');
   });
 
-  test('uses the source-build command when no CLI release is configured', async ({ page }) => {
+  test('public catalog URLs lead to docs while shared project URLs stay readable', async ({ page }) => {
+    for (const path of ['/projects?q=anything', '/models', '/hardware', '/builds']) {
+      await page.goto(`${WEB_UNRELEASED}${path}`);
+      await expect(page).toHaveURL(`${WEB_UNRELEASED}/docs`);
+      await expect(page.getByRole('heading', { name: 'Documentation', exact: true })).toBeVisible();
+      await expect(page.getByRole('searchbox')).toHaveCount(0);
+    }
+    await page.goto(`${WEB_UNRELEASED}/projects/${OWNER_SLUG}`);
+    await expect(page.getByRole('link', { name: 'Export PROJECT.md' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+  });
+
+  test('unreleased setup uses a real source command and links to build instructions', async ({ page }) => {
     await page.goto(`${WEB_UNRELEASED}/`);
     await expect(page.locator('.command-line code')).toContainText('node packages/runner/dist/cli/bin.js mcp add --client claude-code');
-    await expect(page.getByRole('status')).toContainText('Run from a built repository checkout. Requires Node.js 22+.');
+    await expect(page.getByText('Run from a built repository checkout. Requires Node.js 22+.')).toBeVisible();
+    await page.getByRole('link', { name: 'Get started', exact: false }).click();
+    await expect(page.getByRole('heading', { name: 'Before you connect' })).toBeVisible();
   });
 
   test('reduced motion shows the complete hero immediately', async ({ page }) => {
@@ -104,8 +120,8 @@ test.describe('home page content', () => {
   });
 
   test('marks the current section in the navigation', async ({ page, isMobile }) => {
-    await page.goto('/models');
+    await page.goto('/docs/connect');
     if (isMobile) await page.getByRole('button', { name: 'Menu', exact: true }).click();
-    await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Models' })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Docs', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 });

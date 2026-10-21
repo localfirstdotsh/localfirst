@@ -8,8 +8,8 @@ const CLIENTS = [
 
 test('all integrations load their mark and link to the corresponding instructions', async ({ page }) => {
   for (const [label, id] of CLIENTS) {
-    await page.goto('/docs/connect');
-    const link = page.locator('.integration-list').getByRole('link', { name: label, exact: true });
+    await page.goto('/');
+    const link = page.locator('.integration-row').getByRole('link', { name: label, exact: true });
     expect(await link.locator('img').evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     await link.click();
     await expect(page).toHaveURL(new RegExp(`/docs/connect#${id}$`));

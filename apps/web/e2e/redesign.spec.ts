@@ -6,10 +6,10 @@ const evidenceDir = process.env.LOCALFIRST_SCREENSHOT_DIR;
 
 test('Shift alone keeps pointer-focused header links quiet; Tab and Shift+Tab remain visible', async ({ page, isMobile }) => {
   test.skip(isMobile, 'Desktop keyboard modality');
-  await page.goto('/projects');
+  await page.goto('/docs');
   await expect(page.getByRole('button', { name: 'Menu', exact: true })).toBeHidden();
   const nav = page.getByRole('navigation', { name: 'Primary' });
-  const link = nav.getByRole('link', { name: 'Projects', exact: true });
+  const link = nav.getByRole('link', { name: 'Docs', exact: true });
   await link.click();
   await expect(link).toBeFocused();
   const outline = () => link.evaluate((el) => getComputedStyle(el).outlineStyle);
@@ -18,7 +18,7 @@ test('Shift alone keeps pointer-focused header links quiet; Tab and Shift+Tab re
   await expect(link).toBeFocused();
   expect(await outline()).toBe('none');
   await page.keyboard.press('Tab');
-  await expect(nav.getByRole('link', { name: 'Models', exact: true })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await expect(link).toBeFocused();
   expect(await outline()).toBe('solid');
@@ -62,9 +62,26 @@ test('mobile navigation opens, follows real routes, and returns focus on Escape'
   await expect(button).toBeFocused();
   await expect(nav).toBeHidden();
   await button.click();
-  await nav.getByRole('link', { name: 'Models', exact: true }).click();
-  await expect(page).toHaveURL(/\/models$/);
+  await nav.getByRole('link', { name: 'Docs', exact: true }).click();
+  await expect(page).toHaveURL(/\/docs$/);
   await expect(nav).toBeHidden();
+});
+
+test('hero integrations are logo-only with tooltips and reach client-specific instructions', async ({ page, isMobile }) => {
+  await page.goto('/');
+  const row = page.locator('.landing .integration-row');
+  await expect(row.locator('a')).toHaveCount(8);
+  await expect(row.locator('a')).toHaveText(['', '', '', '', '', '', '', '']);
+  for (const image of await row.locator('img').all()) expect(await image.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const claude = row.getByRole('link', { name: 'Claude Code' });
+  if (isMobile) await claude.focus();
+  else await claude.hover();
+  await expect(claude).toHaveAttribute('data-tip', 'Claude Code');
+  await expect.poll(() => claude.evaluate((el) => getComputedStyle(el, '::after').opacity)).toBe('1');
+  await claude.click();
+  await expect(page).toHaveURL(/\/docs\/connect#claude-code$/);
+  await expect(page.locator('#claude-code')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Before you connect' })).toBeVisible();
 });
 
 test('component gallery is gated and uses the live reusable controls', async ({ page }) => {
@@ -82,15 +99,17 @@ test('responsive layouts, real screenshots, and trusted font delivery', async ({
   for (const width of [1440, 1280, 1024, 768, 390, 375]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const [name, path] of [['home', '/'], ['projects', '/projects']] as const) {
-      await page.goto(`${WEB_UNRELEASED}${path}`);
-      if (name === 'home') await page.getByRole('link', { name: 'Read the docs', exact: true }).waitFor();
-      else await page.locator('.result-title').first().waitFor();
+      await page.goto(path === '/' ? `${WEB_UNRELEASED}/` : path);
+      await page.getByRole('heading', { level: 1 }).waitFor();
       expect(await horizontalOverflow(page), `${path} at ${width}`).toBeLessThanOrEqual(0);
       await page.evaluate(() => document.fonts.ready);
       if (evidenceDir) await page.screenshot({ path: `${evidenceDir}/after-${name}-${width}.png`, fullPage: true });
     }
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const homeAxe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+  expect(homeAxe.violations).toEqual([]);
   await page.goto('/projects?type=application');
   await page.getByRole('combobox', { name: 'Sort', exact: true }).click();
   await expect(page.getByRole('listbox')).toBeInViewport();

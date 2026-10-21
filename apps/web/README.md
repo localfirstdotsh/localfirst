@@ -181,3 +181,16 @@ Chromium (`pnpm --filter @localfirst/web exec playwright install chromium`).
 auth/account/privacy/review reference pages during browser tests. Never point this
 runner or integration tests at development/deployed data. There is no ESLint script;
 TypeScript and the architecture suite provide static checks.
+
+## Public entry and catalog preview
+
+The public homepage provides a connection command, client setup links, and docs.
+Shared project and exact-version URLs remain readable without a catalog. The sitemap
+lists public setup/docs pages, without enumerating projects.
+
+`LOCALFIRST_CATALOG_PREVIEW=true` enables the retained `/projects`, `/models`,
+`/hardware`, and `/builds` screens for preview deployments. It is opt-in even in
+development, read at request time, unlinked from the public header, and noindex.
+Without that exact setting these routes redirect to `/docs`; it does not change
+API/MCP access or project visibility. Browser tests opt into this setting on their
+legacy catalog fixtures and exercise the public default on the unreleased server.

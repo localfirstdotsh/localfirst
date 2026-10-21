@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CopyBlock } from '../components/composites/CopyBlock';
+import { IntegrationGroup } from '../features/connect/IntegrationGroup';
 import { Landing } from '../features/landing/Landing';
 import { publicApiUrl } from '../lib/api';
 import { readSetupState, sourceSetupClients } from '../lib/capabilities';
@@ -27,6 +28,8 @@ export default function HomePage() {
           <Link href="/docs/connect">Get started <span aria-hidden="true">↗</span></Link>
           <Link href="/docs">Read the docs</Link>
         </nav>
+        <div className="landing-integrations"><IntegrationGroup compact /></div>
+        <p className="landing-access">Open to everyone. Sign in with GitHub when you contribute.</p>
       </div>
     </Landing>
   );
