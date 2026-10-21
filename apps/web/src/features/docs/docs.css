@@ -1,6 +1,7 @@
 /* Documentation shares guide navigation across all nested routes. */
 .docs-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px; padding-top: 40px; }
-.docs-sidebar { align-self: start; position: sticky; top: 24px; }
+.docs-sidebar { align-self: start; position: sticky; top: 100px; max-height: calc(100svh - 124px); overflow-y: auto; }
+.docs-guide-toggle { display: none; }
 .docs-nav { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
 .docs-nav a { display: block; padding: 10px 12px; border-radius: var(--radius); color: var(--fg-muted); text-decoration: none; }
 .docs-nav a:hover { text-decoration: underline; }
@@ -18,10 +19,46 @@
 .docs-content thead { background: var(--code); }
 @media (max-width: 899px) {
   .docs-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; padding-top: 24px; }
-  .docs-sidebar { position: static; }
-  .docs-nav { flex-direction: row; flex-wrap: wrap; gap: 4px; }
-  .docs-nav a { padding: 8px 10px; }
+  .docs-sidebar { position: static; max-height: none; overflow: visible; }
+  .docs-sidebar-label { display: none; }
+  .docs-guide-toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 60px; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--fg); text-align: left; cursor: pointer; }
+  .docs-guide-toggle > span:first-child { display: grid; gap: 2px; }
+  .docs-nav { display: none; }
+  .docs-nav[data-open='true'] { display: flex; }
 }
 
 .docs-content .integration-list { padding:0; }
 .docs-content .copy-snippet pre { padding:0; }
+
+.docs-jump-links { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: var(--text-sm); padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.docs-jump-links a { display: inline-flex; align-items: center; min-height: 32px; color: var(--fg-muted); }
+@media (max-width: 899px) {
+  .docs-jump-links { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 12px; }
+  .docs-jump-links a { flex-shrink: 0; white-space: nowrap; }
+}
+@media (scripting: none) {
+  .docs-guide-toggle { display: none; }
+  .docs-nav { display: flex; }
+}
+.client-setup { min-width: 0; }
+.client-tabs { display: flex; gap: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: thin; scroll-padding-inline: 4px; border-bottom: 1px solid var(--border); padding: 4px 4px 8px; }
+.client-setup[data-enhanced='false'] .client-tabs { display: none; }
+.client-tab { display: inline-flex; flex-shrink: 0; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--fg-muted); font-size: var(--text-label); white-space: nowrap; cursor: pointer; }
+.client-tab img { filter: invert(1); }
+.client-tab:hover { color: var(--fg); background: var(--hover); }
+.client-tab[aria-selected='true'] { color: var(--fg); border-color: var(--control-border); background: var(--elevated); box-shadow: inset 0 -2px 0 var(--accent); }
+.client-panel { padding-block: 24px; border-bottom: 1px solid var(--border); }
+.client-panel[hidden] { display: none; }
+.client-panel h3 { font-size: 18px; }
+.docs-prerequisites { border-left: 2px solid var(--border-strong); padding-left: 16px; }
+.docs-prerequisites summary, .docs-disclosure summary { min-height: 44px; padding-block: 10px; cursor: pointer; font-weight: 500; }
+.docs-prerequisites[open] summary, .docs-disclosure[open] summary { margin-bottom: 12px; }
+.docs-disclosure { padding-block: 4px; border-block: 1px solid var(--border); }
+.docs-troubleshooting { display: grid; gap: 20px; margin: 0; }
+.docs-troubleshooting dt { font-weight: 600; margin-bottom: 6px; }
+.docs-troubleshooting dd { margin: 0; color: var(--fg-muted); }
+.docs-pagination { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 48px; padding-block: 24px; border-top: 1px solid var(--border); }
+.docs-pagination a { display: grid; align-content: start; gap: 8px; min-height: 64px; text-decoration: none; }
+.docs-pagination a:last-child:not(:first-child) { text-align: right; }
+.docs-pagination a:hover strong { text-decoration: underline; }
+@media (forced-colors: active) { .client-tab[aria-selected='true'] { border-color: Highlight; } }

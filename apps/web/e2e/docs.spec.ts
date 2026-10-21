@@ -9,8 +9,12 @@ const guides = [
   ['/docs/environments/setup', 'Set up for your business'],
 ] as const;
 
-test('Docs opens the hub and all guides share working navigation', async ({ page }) => {
+test('Docs opens the hub and all guides share working navigation', async ({ page }, info) => {
   await page.goto('/docs/connect');
+  if (process.env.LOCALFIRST_SCREENSHOT_DIR) {
+    await page.getByRole('tabpanel', { name: 'Claude Code', exact: true }).waitFor();
+    await page.screenshot({ path: `${process.env.LOCALFIRST_SCREENSHOT_DIR}/docs-connect-${info.project.name}.png` });
+  }
   const menu = page.getByRole('button', { name: 'Menu', exact: true });
   if (await menu.isVisible()) await menu.click();
   await page.getByRole('navigation', { name: 'Primary', exact: true }).getByRole('link', { name: 'Docs', exact: true }).click();
@@ -21,14 +25,16 @@ test('Docs opens the hub and all guides share working navigation', async ({ page
     await expect(page).toHaveURL(new RegExp(`${path}$`));
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
     await expect(page.locator('.site-header a[href="/docs"]')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('navigation', { name: 'Documentation', exact: true }).getByRole('link', { name: title, exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('.docs-nav').getByRole('link', { name: title, exact: true, includeHidden: true })).toHaveAttribute('aria-current', 'page');
+    const guides = page.getByRole('button', { name: /^Browse guides/ });
+    if (await guides.isVisible()) await guides.click();
     await page.getByRole('navigation', { name: 'Documentation', exact: true }).getByRole('link', { name: 'Overview', exact: true }).click();
   }
 });
 
-test('the disabled toolkit explains availability and its route remains unavailable', async ({ page, request }) => {
+test('unavailable toolkit promotion is omitted and its route remains unavailable', async ({ page, request }) => {
   await page.goto('/docs');
-  await expect(page.getByText('The preview is disabled on this deployment.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Agent toolkit' })).toHaveCount(0);
   await expect(page.locator('a[href="/docs/toolkit"]')).toHaveCount(0);
   expect((await request.get('/docs/toolkit')).status()).toBe(404);
 });

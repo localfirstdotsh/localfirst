@@ -86,7 +86,7 @@ test('hero integrations are logo-only with tooltips and reach client-specific in
   await claude.click();
   await expect(page).toHaveURL(/\/docs\/connect#claude-code$/);
   await expect(page.locator('#claude-code')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Before you connect' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose your client' })).toBeVisible();
 });
 
 test('component gallery is gated and uses the live reusable controls', async ({ page }) => {

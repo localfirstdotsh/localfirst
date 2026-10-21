@@ -26,15 +26,11 @@ export default function DocsPage() {
           </li>
         ))}
       </ul>
-      <section className="panel stack gap-8" aria-labelledby="toolkit">
+      {preview && <section className="panel stack gap-8" aria-labelledby="toolkit">
         <div className="spread"><h2 id="toolkit">Agent toolkit</h2><span className="badge">Design preview</span></div>
         <p className="muted">The toolkit teaches an agent how to discover, publish, and test Localfirst projects. Its install command is proposed; the skill is not yet installable from a release.</p>
-        {preview ? (
-          <p><Link href="/docs/toolkit">Explore the agent toolkit preview</Link></p>
-        ) : (
-          <p className="small muted">The preview is disabled on this deployment. The connection and testing guides above describe the available workflows.</p>
-        )}
-      </section>
+        <p><Link href="/docs/toolkit">Explore the agent toolkit preview</Link></p>
+      </section>}
     </div>
   );
 }

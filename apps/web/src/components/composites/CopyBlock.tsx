@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 type CopyState = 'idle' | 'copied' | 'manual';
 
 /** Exact clipboard text, visible feedback, and a selectable fallback for commands and configs. */
-export function CopyBlock({ text, note, format = 'command' }: { text: string; note: string; format?: 'command' | 'json' }) {
+export function CopyBlock({ text, note, format = 'command' }: { text: string; note: string; format?: 'command' | 'json' | 'url' }) {
   const [copy, setCopy] = useState<CopyState>('idle');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -37,15 +37,15 @@ export function CopyBlock({ text, note, format = 'command' }: { text: string; no
     <div className="command-panel">
       <div className={format === 'json' ? 'copy-snippet' : 'command-line'}>
         {format === 'json' ? <pre tabIndex={0} aria-label="MCP configuration"><code ref={codeRef}>{text}</code></pre> : <>
-          <span className="command-prompt" aria-hidden="true">$</span>
+          {format === 'command' && <span className="command-prompt" aria-hidden="true">$</span>}
           <code ref={codeRef}>{text.split(/(\s+)/).map((part, index) => /\s/.test(part) ? part : <span className="command-word" key={index}>{part}</span>)}</code>
         </>}
         <button type="button" className="button button-small" onClick={onCopy}>
-          {format === 'json' ? 'Copy config' : 'Copy'}
+          {format === 'json' ? 'Copy config' : format === 'url' ? 'Copy URL' : 'Copy'}
         </button>
       </div>
       <p className="small muted command-feedback" role="status" aria-live="polite">
-        {copy === 'copied' && (format === 'json' ? 'Copied. Merge this entry into your client configuration, then sign in.' : 'Copied. Run it in your terminal, then review permissions.')}
+        {copy === 'copied' && (format === 'json' ? 'Copied. Merge this entry into your client configuration, then sign in.' : format === 'url' ? 'Copied. Paste this URL into your client’s MCP settings, then sign in.' : 'Copied. Run it in your terminal, then review permissions.')}
         {copy === 'manual' && 'Select and copy manually. The text is selected above.'}
         {copy === 'idle' && note}
       </p>
