@@ -1,23 +1,45 @@
-/* Header shares the same container and input modality as the catalog. */
-.site-header { border-bottom: 1px solid var(--border); }
-.site-header .container { display: flex; align-items: center; gap: 36px; min-height: 72px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--fg); font-weight: 650; font-size: 17px; letter-spacing: -.025em; white-space: nowrap; }
+/* A compact floating shell shared by the landing page and interior pages. */
+html { scroll-padding-top: 100px; }
+.site-header {
+  --header-surface: color-mix(in srgb, var(--card) 96%, transparent);
+  --header-action-text: var(--bg);
+  position: sticky;
+  top: 20px;
+  z-index: 6;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 20px auto 0;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--header-surface);
+  box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 8px 24px rgb(0 0 0 / .08);
+  backdrop-filter: blur(16px);
+}
+.site-header .container { display: flex; align-items: center; gap: 16px; width: auto; min-height: 44px; padding: 0 2px; }
+.brand { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px 0 10px; color: var(--fg); font-weight: 650; font-size: 15px; letter-spacing: -.025em; white-space: nowrap; }
+.brand::after { content: ''; position: absolute; right: 0; width: 1px; height: 20px; background: var(--border); }
 .brand-mark { display: block; width: var(--space-4); height: var(--space-6); flex-shrink: 0; color: var(--accent); }
 /* Optical weight keeps the canonical mark legible at this small header size. */
 .brand-mark path { stroke: currentColor; stroke-width: 20; stroke-linejoin: round; }
-.nav { display: flex; align-items: center; gap: 26px; flex: 1; }
-.nav a { color: var(--fg-muted); padding: 24px 0 22px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 500; transition: color 120ms; }
-.nav a:hover { color: var(--fg); }
-.nav a[aria-current='page'] { color: var(--fg); border-bottom-color: var(--accent); }
+.nav { display: flex; align-items: center; gap: 8px; }
+.nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border-radius: var(--radius-pill); color: var(--fg-muted); font-size: 14px; font-weight: 500; transition: color 150ms, background-color 150ms; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--fg); background: var(--hover); }
 /* Chromium promotes a pointer-focused link to :focus-visible on Shift alone.
    Preserve the pointer modality until an intentional navigation key is pressed. */
 :root[data-input-modality='pointer'] .site-header :focus-visible { outline: none; }
-.nav .nav-sign-in { margin-left: auto; padding: 0 14px; color: var(--fg); border: 1px solid var(--control-border); }
-.site-header .mobile-menu-button { display: none; width: 44px; height: 44px; padding: 0; margin-left: auto; border-color: transparent; }
+.nav .nav-sign-in { color: var(--header-action-text); background: var(--fg); border: 1px solid var(--fg); }
+.nav .nav-sign-in:hover { color: var(--header-action-text); background: color-mix(in srgb, var(--fg) 85%, var(--header-surface)); }
+.site-header .mobile-menu-button { display: none; width: 44px; height: 44px; padding: 0; margin-left: auto; border-color: transparent; border-radius: var(--radius-pill); }
 
 
 .nav a:hover, .brand:hover { text-decoration:none; }
-.nav a:focus-visible { outline-offset:-6px; border-radius:var(--radius); }
+.nav a:focus-visible { outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .nav a { transition: none; } }
+@media (forced-colors: active) {
+  .site-header { --header-surface: Canvas; --header-action-text: ButtonText; border-color: CanvasText; }
+  .nav .nav-sign-in, .nav .nav-sign-in:hover { color: ButtonText; background: ButtonFace; border-color: ButtonText; }
+}
 body > .site-header, body > .site-footer { flex-shrink:0; }
 
 .site-footer { border-top: var(--space-px) solid var(--border); padding-block: var(--space-4); color: var(--fg-muted); font-size: var(--text-meta); }
