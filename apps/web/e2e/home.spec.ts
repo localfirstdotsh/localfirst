@@ -107,7 +107,7 @@ test.describe('home page content', () => {
     await expect(page.locator('.command-line code')).toContainText('node packages/runner/dist/cli/bin.js mcp add --client claude-code');
     await expect(page.getByText('Run from a built repository checkout. Requires Node.js 22+.')).toBeVisible();
     await page.getByRole('link', { name: 'Connect your agent', exact: false }).click();
-    await expect(page.getByRole('heading', { name: 'Before you connect' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Choose your client' })).toBeVisible();
   });
 
   test('reduced motion shows the complete hero immediately', async ({ page }) => {

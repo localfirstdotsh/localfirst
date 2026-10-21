@@ -7,7 +7,6 @@
 .integration-row a:hover::after, .integration-row a:focus-visible::after { opacity: 1; }
 .eyebrow { font-size: var(--text-eyebrow); letter-spacing: .1em; font-weight: 600; color: var(--fg-muted); margin-bottom: 16px; }
 .setup-section { min-width: 0; }
-.setup-guide { display: block; width: fit-content; margin-top: 8px; font-size: 13px; }
 .integration-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; list-style: none; padding: 0; margin: 0; }
 .integration-list a { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; text-decoration: none; color: var(--fg-muted); }
 .integration-list a:hover { color: var(--fg); text-decoration: underline; }
