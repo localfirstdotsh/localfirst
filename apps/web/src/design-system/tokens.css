@@ -1,6 +1,13 @@
 /* One dark foundation for public and private browser pages. */
 :root {
   color-scheme: dark;
+  --landing-lime: #b8f24a;
+  --landing-lime-deep: #a1cb4a;
+  --landing-ink: #171518;
+  --landing-paper: #f4f1e7;
+  --landing-muted: rgb(23 21 24 / .72);
+  --landing-dot: rgb(23 21 24 / .16);
+  --landing-ease: cubic-bezier(.16, 1, .3, 1);
   --bg: #0a0a0a;
   --fg: #f5f5f5;
   --fg-muted: #a3a3a3;

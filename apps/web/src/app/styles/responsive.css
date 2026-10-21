@@ -7,17 +7,15 @@
   .site-header .container { flex-wrap: wrap; gap: 0 16px; min-height: 64px; padding-block: 12px; }
   .site-header .mobile-menu-button { display: inline-flex; }
   .nav { display: none; flex: 1 0 100%; order: 3; gap: 8px; padding-top: 12px; }
-  .nav[data-open='true'] { display: flex; flex-wrap: wrap; }
+  .nav[data-open='true'] { display: flex; flex-direction: column; align-items: stretch; }
   .nav a { padding: 10px 12px; min-height: 44px; }
-  .header-actions .connect-action { display: none; }
+  .nav .nav-sign-in { margin-left: 0; justify-content: flex-start; }
   .getting-started { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .home { padding-top: 40px; }
 }
 @media (max-width: 450px) {
   .site-header .container { gap: 0 12px; }
-  .header-actions { gap: 8px; }
   .brand { font-size: 16px; gap: 8px; }
-  .header-actions .button-small { padding-inline: 10px; }
   .integration-row { gap: 0; }
   .integration-row a { width: 42px; }
   .command-line { padding-left: 10px; gap: 8px; }

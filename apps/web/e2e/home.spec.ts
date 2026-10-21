@@ -66,12 +66,28 @@ test.describe('home page content', () => {
 
   test('offers commands and docs without catalog links or project previews', async ({ page }) => {
     await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'localfirst', exact: true })).toBeVisible();
     await expect(page.locator('.result-title')).toHaveCount(0);
     await expect(page.getByRole('searchbox')).toHaveCount(0);
     await expect(page.locator('a[href="/projects"], a[href="/models"], a[href="/hardware"], a[href="/builds"]')).toHaveCount(0);
+    await expect(page.locator('.site-footer')).toBeHidden();
     await expect(page.getByRole('link', { name: 'Connect your agent', exact: false })).toHaveAttribute('href', '/docs/connect');
     await expect(page.getByRole('link', { name: 'Read the docs', exact: true })).toHaveAttribute('href', '/docs');
-    await expect(page.getByText('Open to everyone. Sign in with GitHub when you contribute.')).toBeVisible();
+    await expect(page.getByText('Open to everyone. Sign in with GitHub when you contribute.')).toHaveCount(0);
+    await page.getByRole('link', { name: 'Read the docs', exact: true }).click();
+    await expect(page.locator('.site-header')).toBeVisible();
+    await expect(page.locator('.site-footer')).toBeVisible();
+  });
+
+  test('reveals the navbar after the hero settles', async ({ page }) => {
+    await page.goto('/');
+    const header = page.locator('.site-header');
+    await expect(page.locator('.landing')).toHaveAttribute('data-intro', 'running');
+    await expect(header).toBeHidden();
+    await expect(page.locator('.landing-intro')).toBeHidden();
+    await expect(page.locator('.landing-copy')).toHaveCSS('opacity', '1');
+    await expect(header).toBeVisible();
+    await expect(header).toHaveCSS('opacity', '1');
   });
 
   test('public catalog URLs lead to docs while shared project URLs stay readable', async ({ page }) => {
@@ -92,6 +108,15 @@ test.describe('home page content', () => {
     await expect(page.getByText('Run from a built repository checkout. Requires Node.js 22+.')).toBeVisible();
     await page.getByRole('link', { name: 'Connect your agent', exact: false }).click();
     await expect(page.getByRole('heading', { name: 'Before you connect' })).toBeVisible();
+  });
+
+  test('reduced motion shows the complete hero immediately', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await expect(page.locator('.landing')).not.toHaveAttribute('data-intro', 'running');
+    await expect(page.locator('.landing-intro')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Copy', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Read the docs', exact: true })).toBeVisible();
   });
 
   test('marks the current section in the navigation', async ({ page, isMobile }) => {

@@ -56,8 +56,13 @@ test('mobile navigation opens, follows real routes, and returns focus on Escape'
   const button = page.getByRole('button', { name: 'Menu', exact: true });
   const nav = page.getByRole('navigation', { name: 'Primary' });
   await expect(nav).toBeHidden();
+  await expect(button).toHaveText('');
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeHidden();
   await button.click();
   await expect(nav).toBeVisible();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  await expect(nav.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(button).toBeFocused();
   await expect(nav).toBeHidden();
@@ -69,7 +74,7 @@ test('mobile navigation opens, follows real routes, and returns focus on Escape'
 
 test('hero integrations are logo-only with tooltips and reach client-specific instructions', async ({ page, isMobile }) => {
   await page.goto('/');
-  const row = page.locator('.hero .integration-row');
+  const row = page.locator('.landing .integration-row');
   await expect(row.locator('a')).toHaveCount(8);
   await expect(row.locator('a')).toHaveText(['', '', '', '', '', '', '', '']);
   for (const image of await row.locator('img').all()) expect(await image.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
@@ -95,6 +100,7 @@ test('component gallery is gated and uses the live reusable controls', async ({ 
 
 test('responsive layouts, real screenshots, and trusted font delivery', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'Six explicit viewport widths');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const width of [1440, 1280, 1024, 768, 390, 375]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const [name, path] of [['home', '/'], ['projects', '/projects']] as const) {

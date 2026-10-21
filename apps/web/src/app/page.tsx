@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { IntegrationGroup } from '../features/connect/IntegrationGroup';
 import { CopyBlock } from '../components/composites/CopyBlock';
+import { IntegrationGroup } from '../features/connect/IntegrationGroup';
+import { Landing } from '../features/landing/Landing';
 import { publicApiUrl } from '../lib/api';
 import { readSetupState, sourceSetupClients } from '../lib/capabilities';
 
@@ -10,20 +11,25 @@ export default function HomePage() {
   const setup = readSetupState();
   const command = setup.state === 'available' ? setup.command : sourceSetupClients(publicApiUrl())[0]!.command;
   return (
-    <div className="container stack home">
-      <section aria-labelledby="hero" className="hero">
-        <h1 id="hero">The home of local AI<span className="hero-period">.</span></h1>
-        <p className="hero-subtitle">Build, test and share AI projects that run on your hardware.</p>
-        <div className="hero-cli"><CopyBlock text={command} note={setup.state === 'available'
-          ? 'Run in your terminal to connect your agent. Requires Node.js 22+.'
-          : 'Run from a built repository checkout. Requires Node.js 22+.'} /></div>
-        <div className="hero-links">
-          <Link href="/docs/connect">Connect your agent →</Link>
-          <Link href="/docs">Read the docs</Link>
+    <Landing>
+      <div className="landing-brand">
+        <h1 id="landing-title" className="landing-wordmark">localfirst</h1>
+        <p className="landing-eyebrow">Your tools · Your projects · Your machine</p>
+      </div>
+      <div className="landing-copy">
+        <p className="landing-lede">The home of local AI.</p>
+        <p className="landing-body">Build, test and share AI projects that run on your hardware.</p>
+        <div className="landing-command">
+          <CopyBlock text={command} note={setup.state === 'available'
+            ? 'Run in your terminal to connect your agent. Requires Node.js 22+.'
+            : 'Run from a built repository checkout. Requires Node.js 22+.'} />
         </div>
-        <IntegrationGroup compact />
-        <p className="hero-access">Open to everyone. Sign in with GitHub when you contribute.</p>
-      </section>
-    </div>
+        <nav className="landing-links" aria-label="Get started">
+          <Link href="/docs/connect">Connect your agent <span aria-hidden="true">↗</span></Link>
+          <Link href="/docs">Read the docs</Link>
+        </nav>
+        <div className="landing-integrations"><IntegrationGroup compact /></div>
+      </div>
+    </Landing>
   );
 }

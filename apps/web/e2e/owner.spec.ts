@@ -105,7 +105,7 @@ test.describe('owner usage screen: access', () => {
 
 test.describe('privacy page', () => {
   test('is public and reachable from the website footer', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/docs');
     await page.getByRole('contentinfo').getByRole('link', { name: 'Privacy' }).click();
     await expect(page).toHaveURL(/\/privacy$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Privacy' })).toBeVisible();
