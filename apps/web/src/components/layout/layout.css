@@ -1,7 +1,8 @@
 /* A compact floating shell shared by the landing page and interior pages. */
 html { scroll-padding-top: 100px; }
 .site-header {
-  --header-surface: color-mix(in srgb, var(--card) 96%, transparent);
+  --header-surface: color-mix(in srgb, var(--card) 58%, transparent);
+  --header-border: rgb(255 255 255 / .18);
   --header-action-text: var(--bg);
   position: sticky;
   top: 20px;
@@ -10,11 +11,19 @@ html { scroll-padding-top: 100px; }
   max-width: calc(100% - 32px);
   margin: 20px auto 0;
   padding: 6px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--header-border);
   border-radius: var(--radius-pill);
-  background: var(--header-surface);
-  box-shadow: 0 2px 4px rgb(0 0 0 / .08), 0 8px 24px rgb(0 0 0 / .08);
-  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), 0 4px 20px rgb(0 0 0 / .08);
+}
+.site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgb(255 255 255 / .1), transparent 65%), var(--header-surface);
+  backdrop-filter: blur(24px) saturate(160%);
+  pointer-events: none;
 }
 .site-header .container { display: flex; align-items: center; gap: 16px; width: auto; min-height: 44px; padding: 0 2px; }
 .brand { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 18px 0 10px; color: var(--fg); font-weight: 650; font-size: 15px; letter-spacing: -.025em; white-space: nowrap; }
@@ -37,7 +46,9 @@ html { scroll-padding-top: 100px; }
 .nav a:focus-visible { outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .nav a { transition: none; } }
 @media (forced-colors: active) {
-  .site-header { --header-surface: Canvas; --header-action-text: ButtonText; border-color: CanvasText; }
+  .site-header { --header-surface: Canvas; --header-border: CanvasText; --header-action-text: ButtonText; background: Canvas; backdrop-filter: none; box-shadow: none; }
+  .site-header::before { display: none; }
+  .site-header .nav { background: Canvas; border-color: CanvasText; box-shadow: none; backdrop-filter: none; }
   .nav .nav-sign-in, .nav .nav-sign-in:hover { color: ButtonText; background: ButtonFace; border-color: ButtonText; }
 }
 body > .site-header, body > .site-footer { flex-shrink:0; }

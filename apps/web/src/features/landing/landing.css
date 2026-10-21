@@ -8,7 +8,8 @@ body:has(.landing) > .site-header {
   --control-border: var(--landing-ink);
   --hover: var(--landing-dot);
   --border: var(--landing-dot);
-  --header-surface: color-mix(in srgb, var(--landing-paper) 96%, transparent);
+  --header-surface: color-mix(in srgb, var(--landing-paper) 32%, transparent);
+  --header-border: rgb(255 255 255 / .45);
   --header-action-text: var(--landing-paper);
   color-scheme: light;
 }
@@ -129,7 +130,7 @@ body:has(.landing[data-intro='running']) > .site-header { animation: landing-nav
   .landing[data-intro='running'] .landing-intro-mark path { animation: none; }
 }
 @media (forced-colors: active) {
-  body:has(.landing) > .site-header { --fg: CanvasText; --fg-muted: CanvasText; --accent: CanvasText; --focus: Highlight; --control-border: ButtonText; --border: CanvasText; --header-surface: Canvas; --header-action-text: ButtonText; }
+  body:has(.landing) > .site-header { --fg: CanvasText; --fg-muted: CanvasText; --accent: CanvasText; --focus: Highlight; --control-border: ButtonText; --border: CanvasText; --header-surface: Canvas; --header-border: CanvasText; --header-action-text: ButtonText; }
   .landing { background: Canvas; color: CanvasText; --landing-ink: CanvasText; --landing-muted: CanvasText; --landing-lime: Canvas; --focus: Highlight; }
   .landing::before, .landing-flock, .landing-intro, .landing-cursor { display: none; }
   .landing .command-line { background: Canvas; color: CanvasText; border-color: ButtonText; }
