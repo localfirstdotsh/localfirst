@@ -36,10 +36,26 @@ async function withOlderDatabase(work: (url: string, pool: Pool) => Promise<void
     await migrate(drizzle(pool), { migrationsFolder: folder });
     await work(url.toString(), pool);
   } finally {
-    await pool?.end();
-    await admin.query(`drop database if exists "${name}" with (force)`);
-    await admin.end();
-    await rm(folder, { recursive: true, force: true });
+    try {
+      await pool?.end();
+      // Pool.end() can resolve while PostgreSQL is still closing its backends.
+      // Wait for the fixture's connections instead of force-killing them, which
+      // can emit an unhandled 57P01 on an already-ending pg client.
+      const deadline = Date.now() + 10_000;
+      while (true) {
+        const active = await admin.query<{ count: string }>(
+          'select count(*)::text as count from pg_stat_activity where datname = $1',
+          [name],
+        );
+        if (active.rows[0]?.count === '0') break;
+        if (Date.now() >= deadline) throw new Error(`Connections to test database ${name} did not close`);
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      await admin.query(`drop database if exists "${name}"`);
+    } finally {
+      await admin.end();
+      await rm(folder, { recursive: true, force: true });
+    }
   }
 }
 
