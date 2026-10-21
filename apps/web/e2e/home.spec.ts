@@ -71,7 +71,7 @@ test.describe('home page content', () => {
     await expect(page.getByRole('searchbox')).toHaveCount(0);
     await expect(page.locator('a[href="/projects"], a[href="/models"], a[href="/hardware"], a[href="/builds"]')).toHaveCount(0);
     await expect(page.locator('.site-footer')).toBeHidden();
-    await expect(page.getByRole('link', { name: 'Get started', exact: false })).toHaveAttribute('href', '/docs/connect');
+    await expect(page.getByRole('link', { name: 'Connect your agent', exact: false })).toHaveAttribute('href', '/docs/connect');
     await expect(page.getByRole('link', { name: 'Read the docs', exact: true })).toHaveAttribute('href', '/docs');
     await expect(page.getByText('Open to everyone. Sign in with GitHub when you contribute.')).toHaveCount(0);
     await page.getByRole('link', { name: 'Read the docs', exact: true }).click();
@@ -106,7 +106,7 @@ test.describe('home page content', () => {
     await page.goto(`${WEB_UNRELEASED}/`);
     await expect(page.locator('.command-line code')).toContainText('node packages/runner/dist/cli/bin.js mcp add --client claude-code');
     await expect(page.getByText('Run from a built repository checkout. Requires Node.js 22+.')).toBeVisible();
-    await page.getByRole('link', { name: 'Get started', exact: false }).click();
+    await page.getByRole('link', { name: 'Connect your agent', exact: false }).click();
     await expect(page.getByRole('heading', { name: 'Before you connect' })).toBeVisible();
   });
 

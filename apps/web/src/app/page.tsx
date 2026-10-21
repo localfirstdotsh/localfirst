@@ -18,14 +18,14 @@ export default function HomePage() {
       </div>
       <div className="landing-copy">
         <p className="landing-lede">The home of local AI.</p>
-        <p className="landing-body">Bring a project. Connect your tools. Build with AI on your own machine.</p>
+        <p className="landing-body">Build, test and share AI projects that run on your hardware.</p>
         <div className="landing-command">
           <CopyBlock text={command} note={setup.state === 'available'
             ? 'Run in your terminal to connect your agent. Requires Node.js 22+.'
             : 'Run from a built repository checkout. Requires Node.js 22+.'} />
         </div>
         <nav className="landing-links" aria-label="Get started">
-          <Link href="/docs/connect">Get started <span aria-hidden="true">↗</span></Link>
+          <Link href="/docs/connect">Connect your agent <span aria-hidden="true">↗</span></Link>
           <Link href="/docs">Read the docs</Link>
         </nav>
         <div className="landing-integrations"><IntegrationGroup compact /></div>
