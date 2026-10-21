@@ -19,7 +19,7 @@ export default async function VersionsPage({ params }: { params: Promise<{ slug:
     return (
       <PageContainer top="standard">
         <StatePanel title="Versions could not be loaded" tone="warning" level="h1">
-          The registry is unavailable. <Link href="/projects">Back to projects</Link>
+          The registry is unavailable. <Link href="/docs">Read the docs</Link>
         </StatePanel>
       </PageContainer>
     );
@@ -45,7 +45,7 @@ export default async function VersionsPage({ params }: { params: Promise<{ slug:
   return (
     <PageContainer gap={24} top="detail">
       <nav aria-label="Breadcrumb" className="small muted">
-        <Link href="/projects">Projects</Link> / <Link href={base}>{project.name}</Link> / <span>Versions</span>
+        <Link href="/">Home</Link> / <Link href={base}>{project.name}</Link> / <span>Versions</span>
       </nav>
       <div className="stack gap-8">
         <h1>Versions</h1>

@@ -63,6 +63,8 @@ export default defineConfig({
       reuseExistingServer: false,
       timeout: 60_000,
       env: webEnv({
+        // Keep exercising the retained catalog preview separately from the public entry.
+        LOCALFIRST_CATALOG_PREVIEW: 'true',
         LOCALFIRST_DESIGN_SYSTEM: 'true',
         LOCALFIRST_CLI_RELEASED: 'true',
         LOCALFIRST_CLI_VERSION: '0.1.0',
@@ -106,6 +108,7 @@ export default defineConfig({
         LOCALFIRST_PUBLIC_API_URL: c.publicApiOrigin,
         LOCALFIRST_SITE_URL: webForwarding,
         LOCALFIRST_CLIENT_IP_HEADER: 'x-e2e-visitor-ip',
+        LOCALFIRST_CATALOG_PREVIEW: 'true',
       },
     },
   ],
