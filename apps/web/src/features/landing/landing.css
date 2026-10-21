@@ -1,5 +1,5 @@
 /* Hero composition adapted from RidwanG206/localfirst-web/app/page.tsx and Hero.tsx. */
-body:has(.landing) { --landing-header-height: 72px; background: var(--landing-lime); }
+body:has(.landing) { --landing-header-height: 78px; background: var(--landing-lime); }
 body:has(.landing) > .site-header {
   --fg: var(--landing-ink);
   --fg-muted: var(--landing-muted);
@@ -7,12 +7,12 @@ body:has(.landing) > .site-header {
   --focus: var(--landing-ink);
   --control-border: var(--landing-ink);
   --hover: var(--landing-dot);
-  position: relative;
-  z-index: 6;
-  border-bottom-color: var(--landing-dot);
+  --border: var(--landing-dot);
+  --header-surface: color-mix(in srgb, var(--landing-paper) 32%, transparent);
+  --header-border: rgb(255 255 255 / .45);
+  --header-action-text: var(--landing-paper);
   color-scheme: light;
 }
-body:has(.landing) > .site-header .container { max-width: none; padding-inline: clamp(16px, 3vw, 34px); }
 
 body:has(.landing) > .site-footer { display: none; }
 body:has(.landing) > main#main { padding: 0; }
@@ -111,10 +111,6 @@ body:has(.landing[data-intro='running']) > .site-header { animation: landing-nav
 @keyframes landing-mark-draw { from { stroke-dashoffset: 6000; fill-opacity: 0; } 65% { fill-opacity: 0; } to { stroke-dashoffset: 0; fill-opacity: 1; } }
 @keyframes landing-reveal { from { opacity: 0; } to { opacity: 1; } }
 
-@media (max-width: 800px) {
-  body:has(.landing) { --landing-header-height: 64px; }
-}
-
 @media (max-width: 640px) {
   .landing { padding-block: 64px; }
   .landing-composition { flex-direction: column; align-items: center; gap: 46px; }
@@ -134,7 +130,7 @@ body:has(.landing[data-intro='running']) > .site-header { animation: landing-nav
   .landing[data-intro='running'] .landing-intro-mark path { animation: none; }
 }
 @media (forced-colors: active) {
-  body:has(.landing) > .site-header { --fg: CanvasText; --fg-muted: CanvasText; --accent: CanvasText; --focus: Highlight; --control-border: ButtonText; border-color: CanvasText; }
+  body:has(.landing) > .site-header { --fg: CanvasText; --fg-muted: CanvasText; --accent: CanvasText; --focus: Highlight; --control-border: ButtonText; --border: CanvasText; --header-surface: Canvas; --header-border: CanvasText; --header-action-text: ButtonText; }
   .landing { background: Canvas; color: CanvasText; --landing-ink: CanvasText; --landing-muted: CanvasText; --landing-lime: Canvas; --focus: Highlight; }
   .landing::before, .landing-flock, .landing-intro, .landing-cursor { display: none; }
   .landing .command-line { background: Canvas; color: CanvasText; border-color: ButtonText; }

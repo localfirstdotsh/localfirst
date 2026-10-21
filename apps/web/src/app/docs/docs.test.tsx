@@ -65,11 +65,11 @@ describe('documentation discovery', () => {
     expect(currentLink(navigation)).toEqual([expect.stringContaining('href="/docs/environments/setup"')]);
   });
 
-  it('explains the disabled toolkit without linking to its unavailable route', () => {
+  it('omits unavailable toolkit promotion from the public docs', () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('LOCALFIRST_TOOLKIT_PREVIEW', 'false');
     const hub = renderToStaticMarkup(<DocsPage />);
-    expect(hub).toContain('preview is disabled');
+    expect(hub).not.toContain('Agent toolkit');
     expect(hub).not.toContain('href="/docs/toolkit"');
     expect(renderToStaticMarkup(<DocsLayout>Guide</DocsLayout>)).not.toContain('href="/docs/toolkit"');
     expect(() => renderToStaticMarkup(<ToolkitPreviewPage />)).toThrow('NEXT_NOT_FOUND');
