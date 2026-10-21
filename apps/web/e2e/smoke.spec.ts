@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-test('the home page loads with its title and navigation', async ({ page, isMobile }) => {
+test('the home page loads with its wordmark, navbar, and setup links', async ({ page, isMobile }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'The home of local AI.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'localfirst', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Get started' })).toBeVisible();
+  await expect(page.locator('.site-header')).toBeVisible();
   if (isMobile) await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
 });
