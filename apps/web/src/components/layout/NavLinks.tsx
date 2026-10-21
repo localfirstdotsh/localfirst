@@ -50,15 +50,18 @@ export function NavLinks() {
 
   return (
     <>
+      <button ref={button} type="button" className="button mobile-menu-button" aria-label="Menu" aria-controls="primary-navigation" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true" focusable="false">
+          <path d={open ? 'M6 6l12 12M6 18L18 6' : 'M4 6h16M4 12h16M4 18h16'} />
+        </svg>
+      </button>
       <nav ref={nav} id="primary-navigation" className="nav" aria-label="Primary" data-open={open}>
         {LINKS.map((link) => {
           const active = pathname === link.href || pathname.startsWith(`${link.href}/`) || (link.label === 'Docs' && pathname.startsWith('/docs/'));
           return <Link key={link.href} href={link.href} aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}>{link.label}</Link>;
         })}
+        <a href="/sign-in" className="button button-small nav-sign-in" onClick={() => setOpen(false)}>Sign in</a>
       </nav>
-      <button ref={button} type="button" className="button button-small mobile-menu-button" aria-controls="primary-navigation" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {open ? 'Close' : 'Menu'}
-      </button>
     </>
   );
 }

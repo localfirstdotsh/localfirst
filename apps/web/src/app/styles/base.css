@@ -20,7 +20,7 @@ body {
    chips, and titles opt out below: they are not links inside running text. */
 a { color: var(--fg); text-decoration: underline; text-underline-offset: 2px; }
 a:hover { text-decoration-thickness: 2px; }
-.brand, .nav a, .button, .result-title a, .category-tabs a, .search-clear, .row-title, .chip-link, .skip-link, .header-actions a { text-decoration: none; }
+.brand, .nav a, .button, .result-title a, .category-tabs a, .search-clear, .row-title, .chip-link, .skip-link { text-decoration: none; }
 .brand:hover, .nav a:hover, .button:hover, .row-title:hover, .chip-link:hover { text-decoration: underline; }
 
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

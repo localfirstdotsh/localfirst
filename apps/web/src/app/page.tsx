@@ -29,7 +29,6 @@ export default function HomePage() {
           <Link href="/docs">Read the docs</Link>
         </nav>
         <div className="landing-integrations"><IntegrationGroup compact /></div>
-        <p className="landing-access">Open to everyone. Sign in with GitHub when you contribute.</p>
       </div>
     </Landing>
   );
