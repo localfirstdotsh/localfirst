@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { clipboardText, selectedText } from './helpers';
+import { clipboardText, selectedText, SETUP_COMMAND, WEB_UNRELEASED } from './helpers';
 
 test.describe('home setup command', () => {
   test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
-  test('shows a single npx command with no client selector', async ({ page }) => {
+  test('shows the configured setup command with no client selector', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('group', { name: 'Agent client' })).toHaveCount(0);
-    await expect(page.locator('.command-line code')).toHaveText('npx localfirstdotsh');
+    await expect(page.locator('.command-line code')).toHaveText(SETUP_COMMAND);
   });
 
   test('copies exactly the command to the clipboard, says so, and keeps focus on the button', async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe('home setup command', () => {
     await expect(page.getByText(/^Copied\./)).toHaveCount(0);
     await copy.click();
     await expect(page.getByRole('status').filter({ hasText: 'Copied.' })).toBeVisible();
-    expect(await clipboardText(page)).toBe('npx localfirstdotsh');
+    expect(await clipboardText(page)).toBe(SETUP_COMMAND);
     // No prompt decoration, no trailing text, and focus has not been moved away.
     expect(await clipboardText(page)).not.toMatch(/^\$|\s$/);
     await expect(copy).toBeFocused();
@@ -43,7 +43,7 @@ test.describe('home setup command', () => {
     await expect(page.getByText('Select and copy manually.')).toBeVisible();
     await expect(page.getByText('Copied.')).toHaveCount(0);
     // The command is selected, so the person can copy it with the keyboard.
-    expect(await selectedText(page)).toBe('npx localfirstdotsh');
+    expect(await selectedText(page)).toBe(SETUP_COMMAND);
   });
 
   test('can be used from the keyboard alone', async ({ page }) => {
@@ -64,12 +64,32 @@ test.describe('home page content', () => {
     }
   });
 
-  test('previews four projects and sends discovery to the directory', async ({ page }) => {
+  test('shows the standalone hero and links to real setup and documentation', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('.result-title').first()).toBeVisible();
-    await expect(page.locator('.result-title')).toHaveCount(4);
+    await expect(page.getByRole('heading', { name: 'localfirst', exact: true })).toBeVisible();
+    await expect(page.locator('.result-title')).toHaveCount(0);
     await expect(page.getByRole('searchbox')).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'View all projects' })).toHaveAttribute('href', '/projects');
+    await expect(page.locator('.site-header')).toBeHidden();
+    await expect(page.locator('.site-footer')).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Get started', exact: false })).toHaveAttribute('href', '/docs/connect');
+    await page.getByRole('link', { name: 'Read the docs', exact: true }).click();
+    await expect(page.locator('.site-header')).toBeVisible();
+    await expect(page.locator('.site-footer')).toBeVisible();
+  });
+
+  test('uses the source-build command when no CLI release is configured', async ({ page }) => {
+    await page.goto(`${WEB_UNRELEASED}/`);
+    await expect(page.locator('.command-line code')).toContainText('node packages/runner/dist/cli/bin.js mcp add --client claude-code');
+    await expect(page.getByRole('status')).toContainText('Run from a built repository checkout. Requires Node.js 22+.');
+  });
+
+  test('reduced motion shows the complete hero immediately', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await expect(page.locator('.landing')).not.toHaveAttribute('data-intro', 'running');
+    await expect(page.locator('.landing-intro')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Copy', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Read the docs', exact: true })).toBeVisible();
   });
 
   test('marks the current section in the navigation', async ({ page, isMobile }) => {
