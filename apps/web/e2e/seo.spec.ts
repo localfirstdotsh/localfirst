@@ -2,16 +2,16 @@ import { expect, test } from '@playwright/test';
 import { OWNER_SLUG } from './helpers';
 
 test.describe('discovery metadata', () => {
-  test('sitemap lists static pages and visible projects with absolute URLs, but no exact versions', async ({ request, baseURL }) => {
+  test('sitemap lists the public docs without enumerating projects or catalogs', async ({ request, baseURL }) => {
     const response = await request.get('/sitemap.xml');
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toContain('xml');
     const locs = [...(await response.text()).matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]!);
-    expect(locs.length).toBeGreaterThan(8);
+    expect(locs.length).toBeGreaterThanOrEqual(8);
     for (const loc of locs) expect(loc.startsWith(baseURL!)).toBe(true);
-    expect(locs).toContain(`${baseURL}/projects/${OWNER_SLUG}`);
-    expect(locs).toContain(`${baseURL}/models`);
-    expect(locs.some((loc) => loc.includes('/versions/'))).toBe(false);
+    expect(locs).not.toContain(`${baseURL}/projects/${OWNER_SLUG}`);
+    expect(locs).toContain(`${baseURL}/docs/connect`);
+    expect(locs.some((loc) => /\/(projects|models|hardware|builds)(\/|$)/.test(new URL(loc).pathname))).toBe(false);
   });
 
   test('robots keeps private surfaces out and points at the sitemap', async ({ request, baseURL }) => {

@@ -14,7 +14,7 @@ export default function DocsPage() {
     <div className="stack gap-32">
       <header className="stack gap-16">
         <h1>Documentation</h1>
-        <p className="muted">Find a project with your agent, understand its requirements, and work with it locally. Start with the guide for the task in front of you.</p>
+        <p className="muted">Connect your tools, work with a shared project, and build locally. Start with the guide for the task in front of you.</p>
       </header>
       <ul className="row-list">
         {DOCS_GUIDES.map(({ href, title, description }) => (

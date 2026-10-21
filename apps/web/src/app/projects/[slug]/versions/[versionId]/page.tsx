@@ -40,7 +40,7 @@ export default async function VersionPage({ params }: { params: Params }) {
     return (
       <PageContainer top="standard">
         <StatePanel title="This version could not be loaded" tone="warning" level="h1">
-          The registry is unavailable. <Link href="/projects">Back to projects</Link>
+          The registry is unavailable. <Link href="/docs">Read the docs</Link>
         </StatePanel>
       </PageContainer>
     );
@@ -65,7 +65,7 @@ export default async function VersionPage({ params }: { params: Params }) {
   return (
     <PageContainer gap={32} top="detail">
       <nav aria-label="Breadcrumb" className="small muted">
-        <Link href="/projects">Projects</Link> / <Link href={base}>{project.name}</Link> /{' '}
+        <Link href="/">Home</Link> / <Link href={base}>{project.name}</Link> /{' '}
         <Link href={`${base}/versions`}>Versions</Link> / <span className="mono">v{version.spec_version}</span>
       </nav>
 
