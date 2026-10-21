@@ -64,17 +64,28 @@ test.describe('home page content', () => {
     }
   });
 
-  test('shows the standalone hero and links to real setup and documentation', async ({ page }) => {
+  test('shows the hero, navbar, and links to real setup and documentation', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'localfirst', exact: true })).toBeVisible();
     await expect(page.locator('.result-title')).toHaveCount(0);
     await expect(page.getByRole('searchbox')).toHaveCount(0);
-    await expect(page.locator('.site-header')).toBeHidden();
+    await expect(page.locator('.site-header')).toBeVisible();
     await expect(page.locator('.site-footer')).toBeHidden();
     await expect(page.getByRole('link', { name: 'Get started', exact: false })).toHaveAttribute('href', '/docs/connect');
     await page.getByRole('link', { name: 'Read the docs', exact: true }).click();
     await expect(page.locator('.site-header')).toBeVisible();
     await expect(page.locator('.site-footer')).toBeVisible();
+  });
+
+  test('reveals the navbar after the hero settles', async ({ page }) => {
+    await page.goto('/');
+    const header = page.locator('.site-header');
+    await expect(page.locator('.landing')).toHaveAttribute('data-intro', 'running');
+    await expect(header).toBeHidden();
+    await expect(page.locator('.landing-intro')).toBeHidden();
+    await expect(page.locator('.landing-copy')).toHaveCSS('opacity', '1');
+    await expect(header).toBeVisible();
+    await expect(header).toHaveCSS('opacity', '1');
   });
 
   test('uses the source-build command when no CLI release is configured', async ({ page }) => {

@@ -29,15 +29,15 @@ export function Landing({ children }: { children: ReactNode }) {
     ], { duration: 3510 });
     root.dataset.intro = 'running';
     const finish = () => { delete root.dataset.intro; };
-    const timer = window.setTimeout(finish, 4300);
+    const timer = window.setTimeout(finish, 4900);
     // Resizing or navigating by keyboard makes the complete page immediately available.
     const stop = () => { animation.cancel(); finish(); window.clearTimeout(timer); };
     window.addEventListener('resize', stop);
-    root.addEventListener('focusin', stop);
+    document.addEventListener('focusin', stop);
     return () => {
       stop();
       window.removeEventListener('resize', stop);
-      root.removeEventListener('focusin', stop);
+      document.removeEventListener('focusin', stop);
     };
   }, [reduced]);
 

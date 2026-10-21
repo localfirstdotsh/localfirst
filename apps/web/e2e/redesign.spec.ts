@@ -24,7 +24,8 @@ test('Shift alone keeps pointer-focused header links quiet; Tab and Shift+Tab re
   expect(await outline()).toBe('solid');
   await page.getByRole('link', { name: 'localfirst.sh' }).click();
   await page.keyboard.press('Shift');
-  await expect(page.locator('.site-header')).toBeHidden();
+  await expect(page.getByRole('link', { name: 'localfirst.sh' })).toHaveCSS('outline-style', 'none');
+  await expect(nav.locator('[aria-current]')).toHaveCount(0);
 });
 
 test('sort supports keyboard selection, Escape, and outside dismissal', async ({ page }) => {
@@ -51,7 +52,7 @@ test('sort supports keyboard selection, Escape, and outside dismissal', async ({
 
 test('mobile navigation opens, follows real routes, and returns focus on Escape', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'Phone disclosure');
-  await page.goto('/docs');
+  await page.goto('/');
   const button = page.getByRole('button', { name: 'Menu', exact: true });
   const nav = page.getByRole('navigation', { name: 'Primary' });
   await expect(nav).toBeHidden();
