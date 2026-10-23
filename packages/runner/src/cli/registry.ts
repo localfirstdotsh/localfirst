@@ -1,4 +1,5 @@
 import { CliError, EXIT } from './errors.js';
+import { terminalSafe } from './io.js';
 
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -99,32 +100,6 @@ export interface RegistryResponse<T> {
  * Minimal registry client. It talks to one configured origin, never follows a
  * redirect, bounds responses, and sends a bearer token only when given one.
  */
-export interface ApproverLinkStart {
-  link_id: string;
-  user_code: string;
-  poll_secret: string;
-  verification_url: string;
-  expires_in: number;
-  interval: number;
-}
-
-export type ApproverLinkPoll =
-  | { status: 'authorization_pending'; interval: number }
-  | { status: 'issued'; credential: string; credential_id: string; label: string; expires_at: string };
-
-export interface DraftReview {
-  draft: Record<string, unknown> & { draft_id?: string; kind?: string; revision?: number; payload_digest?: string; state?: string };
-  stale: boolean;
-  content: string;
-  content_label: string;
-  content_digest: string | null;
-  slug: string | null;
-  files: Array<{ path: string; content: string }>;
-  issues: Array<{ code: string; message: string; severity: string; pointer?: string }>;
-  warning_codes: string[];
-  approval_window_seconds: number;
-}
-
 export class RegistryClient {
   constructor(
     readonly origin: string,
@@ -162,8 +137,8 @@ export class RegistryClient {
     try {
       const body = JSON.parse(text) as { error?: { code?: unknown; message?: unknown } };
       const code = typeof body.error?.code === 'string' ? body.error.code : null;
-      const message = typeof body.error?.message === 'string' ? body.error.message : `Registry answered ${status}.`;
-      return new RegistryError(status, code, message);
+      const message = typeof body.error?.message === 'string' ? terminalSafe(body.error.message) : `Registry answered ${status}.`;
+      return new RegistryError(status, code === null ? null : terminalSafe(code), message);
     } catch {
       return new RegistryError(status, null, `Registry answered ${status}.`);
     }
@@ -222,39 +197,6 @@ export class RegistryClient {
   /** Anonymous: generic local plan template for a test definition (BACKEND_PRD section 12.2). */
   async testPlanTemplate(testDefinitionId: string): Promise<unknown> {
     const { data } = await this.json<unknown>(`/api/v1/test-definitions/${encodeURIComponent(testDefinitionId)}/plan`, { method: 'GET' });
-    return data;
-  }
-
-  /** Anonymous: ask to link this machine as an approval device. A browser session must approve the code. */
-  async startApproverLink(label: string): Promise<ApproverLinkStart> {
-    const { data } = await this.json<ApproverLinkStart>('/api/v1/approver-links', { method: 'POST', body: { client_label: label } });
-    return data;
-  }
-
-  /** Anonymous: trade the poll secret for a credential once a person has approved the code. */
-  async redeemApproverLink(linkId: string, pollSecret: string): Promise<ApproverLinkPoll> {
-    const { data } = await this.json<ApproverLinkPoll>(`/api/v1/approver-links/${encodeURIComponent(linkId)}/token`, {
-      method: 'POST',
-      body: { poll_secret: pollSecret },
-    });
-    return data;
-  }
-
-  /** With an approval credential: the exact artifact a person is being asked to approve. */
-  async reviewDraft(draftId: string): Promise<DraftReview> {
-    const { data } = await this.json<DraftReview>(`/api/v1/drafts/${encodeURIComponent(draftId)}/review`, { method: 'GET' });
-    return data;
-  }
-
-  /** With an approval credential: record the person's decision for one exact revision and digest. */
-  async recordApproval(
-    draftId: string,
-    decision: { draft_revision: number; payload_digest: string; acknowledged_warning_codes: string[]; decision: 'approved' | 'denied' },
-  ): Promise<{ approval_id: string | null; decision: string; draft: Record<string, unknown> }> {
-    const { data } = await this.json<{ approval_id: string | null; decision: string; draft: Record<string, unknown> }>(
-      `/api/v1/drafts/${encodeURIComponent(draftId)}/approval`,
-      { method: 'POST', body: decision },
-    );
     return data;
   }
 

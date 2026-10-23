@@ -16,7 +16,6 @@ import { ApiError } from '../http/errors.js';
 import type { Actor, OperatorRole } from '../http/context.js';
 import { PRODUCT_SCOPES, parseScopeClaim } from './scopes.js';
 import { auth } from './instance.js';
-import { resolveApproverCredential } from '../services/approvers.js';
 
 interface AccountState {
   exists: boolean;
@@ -113,38 +112,10 @@ export interface ResolveActorInput {
 export async function resolveActor({ headers, audience }: ResolveActorInput): Promise<Actor> {
   const authorization = headers.get('authorization');
   if (authorization) {
-    const approver = await resolveApproverActor(authorization);
-    if (approver) return approver;
     return resolveBearerActor(authorization, audience);
   }
   const session = await resolveSessionActor(headers);
   return session ?? { kind: 'anonymous' };
-}
-
-/**
- * A bearer secret with the approver prefix is an approval credential, never a
- * JWT. An unknown, expired, or revoked one is an error, not a downgrade. The
- * REST adapter limits where this kind of caller is accepted at all.
- */
-async function resolveApproverActor(authorization: string): Promise<Actor | null> {
-  const match = /^Bearer\s+(lfh_\S+)$/i.exec(authorization.trim());
-  if (!match) return null;
-  const resolved = await resolveApproverCredential(match[1] as string);
-  if (!resolved) {
-    throw ApiError.invalidCredential(
-      'The approval credential is not valid. Link this machine again.',
-      restChallenge({ error: 'invalid_token' }),
-    );
-  }
-  const state = await loadAccountState(resolved.userId);
-  assertUsable(state);
-  return {
-    kind: 'approver',
-    userId: resolved.userId,
-    credentialId: resolved.credentialId,
-    operatorRoles: [],
-    scopes: new Set<string>(),
-  };
 }
 
 export async function resolveBearerActor(authorization: string, audience: string): Promise<Actor> {

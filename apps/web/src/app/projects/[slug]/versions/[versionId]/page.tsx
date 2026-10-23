@@ -10,6 +10,7 @@ import { StatePanel } from '../../../../../components/composites/StatePanel';
 import { ApiRequestError, getVersion, publicApiUrl } from '../../../../../lib/api';
 import { formatDate } from '../../../../../lib/format';
 import { loadProject } from '../../../../../features/projects/project-loader';
+import { delegationLabel } from '../../../../../features/projects/publication-label';
 import type { VersionDetail } from '../../../../../lib/schemas';
 
 /** An exact version is its own page: its canonical URL is itself, never the current version. */
@@ -61,6 +62,7 @@ export default async function VersionPage({ params }: { params: Params }) {
   // The version in the URL is the one shown. A newer one is announced, never swapped in.
   const isCurrent = version.project_version_id === project.current_version.project_version_id;
   const exportUrl = `${publicApiUrl()}/api/v1/projects/${encodeURIComponent(project.project_id)}/export?version=${encodeURIComponent(version.project_version_id)}`;
+  const delegated = delegationLabel(version.publication, project.manager.handle);
 
   return (
     <PageContainer gap={32} top="detail">
@@ -77,6 +79,7 @@ export default async function VersionPage({ params }: { params: Params }) {
           {isCurrent ? 'This is the current version.' : 'This is a historical version. Its content is unchanged.'}
           {' '}Published {formatDate(version.published_at)}.
         </p>
+        {delegated && <p className="small muted">{delegated}</p>}
         {!isCurrent && (
           <div className="notice" role="note">
             <h2>A newer version is available</h2>

@@ -56,6 +56,7 @@ import {
   serializeDraft,
 } from '../services/drafts.js';
 import { publishProjectDraft } from '../services/publication.js';
+import { isDelegated } from '../services/delegation.js';
 import {
   PUBLISH_SCOPE,
   WRITE_SCOPE,
@@ -193,7 +194,7 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
   if (config().features.communityNetwork) {
     server.registerTool('project_create_derivative_draft', {
       title: 'Create an attributed derivative draft',
-      description: 'Pin a public parent version and create your own private project draft. Preserve parent authors and source licenses; no evidence or management rights transfer. Separate human approval is required to publish.',
+      description: 'Pin a public parent version and create your own private project draft. Preserve parent authors and source licenses; no evidence or management rights transfer. Publishing needs the owner\'s approval of the exact version, unless the owner lets this connection publish without asking.',
       inputSchema: derivativeDraftInputSchema.extend({ project_id: z.uuid(), idempotency_key: idempotencyKey }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       scopeChallenge: requireScopes('projects:draft'),
@@ -224,7 +225,7 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
       annotations: { readOnlyHint: true, openWorldHint: false }, scopeChallenge: requireScopes('projects:read'),
     }, async args => { const denied = requireToolScope(actor, 'projects:read'); if (denied) return denied; return guard(async () => ok('Accepted community contributions.', await listCommunity(args.kind, { ...(args.project_id ? { project_id: args.project_id } : {}), ...(args.limit ? { limit: String(args.limit) } : {}), ...(args.cursor ? { cursor: args.cursor } : {}) }))); });
     server.registerTool('community_save', {
-      title: 'Save a private community contribution', description: 'Save an immutable private collection or attributed troubleshooting note; then create a contribution draft for exact human approval. Publication stays pending until operator review.',
+      title: 'Save a private community contribution', description: 'Save an immutable private collection or attributed troubleshooting note; then create a contribution draft for the owner to approve, or to publish if the owner lets this connection publish without asking. Publication stays pending until operator review.',
       inputSchema: z.discriminatedUnion('kind', [z.object({ kind: z.literal('collection'), payload: collectionInputSchema, idempotency_key: idempotencyKey }).strict(), z.object({ kind: z.literal('troubleshooting'), payload: troubleshootingInputSchema, idempotency_key: idempotencyKey }).strict()]),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, scopeChallenge: requireScopes('community:write'),
     }, async args => { const denied = requireToolScope(actor, 'community:write'); if (denied) return denied; return guard(async () => {
@@ -513,7 +514,7 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
     {
       title: 'Get your draft',
       description:
-        'Read one of your own drafts with its validation issues, warning codes, approval state, and the human review URL.',
+        'Read one of your own drafts with its validation issues, warning codes, approval state, the human review URL, and whether this connection may publish without a per-artifact approval (`publication_delegated`).',
       inputSchema: z.object({ draft_id: z.string().min(1).max(64) }),
       annotations: { readOnlyHint: true, openWorldHint: false },
       scopeChallenge: requireAnyScope('projects:draft', 'builds:write', 'tests:submit', 'community:write'),
@@ -526,9 +527,12 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
         const scoped = requireKindScope(actor, draft.kind, 'write');
         if (scoped) return scoped;
         const approval = await activeApproval(draft.id);
-        const serialized = serializeDraft(draft, approval);
+        const delegated = await isDelegated(actor);
+        const serialized = { ...serializeDraft(draft, approval), publication_delegated: delegated };
         return ok(
-          `Draft ${draft.id} is ${draft.state} at revision ${draft.revision}.`,
+          `Draft ${draft.id} is ${draft.state} at revision ${draft.revision}. ${delegated
+            ? 'Its owner lets this connection publish without a per-artifact approval.'
+            : 'Publishing needs the owner to approve it at the review URL.'}`,
           serialized as unknown as Record<string, unknown>,
         );
       });
@@ -665,10 +669,11 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
     {
       title: 'Publish an approved contribution',
       description:
-        'Publish the exact artifact a person approved in a browser session. The approval ID, draft revision, and payload digest must match the current draft, and the approval is consumed once. A published build or test result is public but pending review: publication never verifies anything.',
+        'Publish the exact artifact a person approved in a browser session, passing that `approval_id`. If the owner lets this connection publish without asking (`publication_delegated` from draft_get), omit `approval_id` and list `acknowledged_warning_codes` for every warning on the draft instead; the owner sees what you published and can unpublish it. The draft revision and payload digest must match the current draft either way. A published build or test result is public but pending review: publication never verifies anything.',
       inputSchema: z.object({
         draft_id: z.string().min(1).max(64),
-        approval_id: z.string().min(1).max(64),
+        approval_id: z.string().min(1).max(64).optional(),
+        acknowledged_warning_codes: z.array(z.string().max(64)).max(50).optional(),
         draft_revision: z.int().positive(),
         payload_digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
         idempotency_key: idempotencyKey,
@@ -692,9 +697,10 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
               const result = await publishRecordDraft({
                 actor,
                 draftId: args.draft_id,
-                approvalId: args.approval_id,
+                approvalId: args.approval_id ?? null,
                 draftRevision: args.draft_revision,
                 payloadDigest: args.payload_digest,
+                acknowledgedWarningCodes: args.acknowledged_warning_codes ?? [],
               });
               return { status: 201, body: result as unknown as Record<string, unknown> };
             },
@@ -716,9 +722,10 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
             const result = await publishProjectDraft({
               actor,
               draftId: args.draft_id,
-              approvalId: args.approval_id,
+              approvalId: args.approval_id ?? null,
               draftRevision: args.draft_revision,
               payloadDigest: args.payload_digest,
+              acknowledgedWarningCodes: args.acknowledged_warning_codes ?? [],
             });
             return { status: 201, body: result as unknown as Record<string, unknown> };
           },

@@ -1,5 +1,7 @@
 # localfirstdotsh release readiness
 
+> Superseded by [`npm-release-security-audit.md`](npm-release-security-audit.md) (2026-10-23). This report is kept as the 2026-10-16 record.
+
 Audit of `localfirstdotsh` 0.1.0 (`packages/runner/`) on branch `chore/localfirstdotsh-release-audit`, run 2026-10-16
 on macOS (Apple Silicon, Darwin 25.5), Node.js 26.8.1, pnpm 12.4.1. Nothing was published, pushed to
 `staging`/`main`, or changed in a live environment.

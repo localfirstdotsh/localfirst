@@ -313,12 +313,6 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
           name: 'better-auth.session_token',
           description: 'Human browser session. Required for approval and other human-only routes.',
         },
-        approverDevice: {
-          type: 'http',
-          scheme: 'bearer',
-          description:
-            'A machine the person linked with `auth approver-login`. It records or reads a publication decision and is refused on every other route; it cannot be granted through OAuth or MCP consent.',
-        },
       },
       schemas: {
         ProjectSpecification: { oneOf: [projectJsonSchema(config.apiBaseUrl), versioned['project/v0.3']] },
@@ -540,58 +534,10 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
           tags: ['contribution'],
           summary: 'Read the exact artifact a person is asked to approve',
           description:
-            'Returns the public text, bundled files, blocking issues, and warning codes for the current revision. A browser session or a linked approval device only.',
-          security: [{ session: [] }, { approverDevice: [] }],
+            'Returns the public text, bundled files, blocking issues, and warning codes for the current revision. A browser session only.',
+          security: [{ session: [] }],
           parameters: [{ name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: { '200': { description: 'Exact review data' }, ...standardErrors },
-        },
-      },
-      '/api/v1/approver-links': {
-        post: {
-          tags: ['contribution'],
-          summary: 'Start linking a machine as an approval device',
-          description:
-            'Anonymous. Returns a short code to compare in the browser and a poll secret only the machine holds. Nothing is granted until a signed-in browser session approves the code.',
-          security: [],
-          requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { client_label: { type: 'string' } } } } } },
-          responses: { '201': { description: 'Link started' }, ...standardErrors },
-        },
-      },
-      '/api/v1/approver-links/decision': {
-        post: {
-          tags: ['contribution'],
-          summary: 'Approve or deny a link code in a browser session',
-          security: [{ session: [] }],
-          requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
-          responses: { '200': { description: 'Decision recorded' }, ...standardErrors },
-        },
-      },
-      '/api/v1/approver-links/{link_id}/token': {
-        post: {
-          tags: ['contribution'],
-          summary: 'Redeem an approved link for a credential, once',
-          description: '202 while the person has not decided; 410 when denied, expired, or already redeemed.',
-          security: [],
-          parameters: [{ name: 'link_id', in: 'path', required: true, schema: { type: 'string' } }],
-          requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
-          responses: { '200': { description: 'Credential issued' }, '202': { description: 'Authorization pending' }, ...standardErrors },
-        },
-      },
-      '/api/v1/me/approver-devices': {
-        get: {
-          tags: ['contribution'],
-          summary: 'List your linked approval devices',
-          security: [{ session: [] }],
-          responses: { '200': { description: 'Devices' }, ...standardErrors },
-        },
-      },
-      '/api/v1/me/approver-devices/{device_id}': {
-        delete: {
-          tags: ['contribution'],
-          summary: 'Revoke a linked approval device',
-          security: [{ session: [] }],
-          parameters: [{ name: 'device_id', in: 'path', required: true, schema: { type: 'string' } }],
-          responses: { '204': { description: 'Revoked' }, ...standardErrors },
         },
       },
       '/api/v1/drafts/{draft_id}/approval': {
@@ -599,8 +545,8 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
           tags: ['contribution'],
           summary: 'Record a human approval of the exact artifact',
           description:
-            'A browser session, or an approval device the person linked from their own machine. An agent token cannot create an approval, and the approval is single use with a short expiry.',
-          security: [{ session: [] }, { approverDevice: [] }],
+            'A browser session only. An agent token cannot create an approval, and the approval is single use with a short expiry. With `delegate_connection: true`, the same request also lets the connection that created the draft publish without asking.',
+          security: [{ session: [] }],
           parameters: [{ name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } }],
           requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
           responses: { '201': { description: 'Approval recorded' }, ...standardErrors },
@@ -608,7 +554,7 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
         delete: {
           tags: ['contribution'],
           summary: 'Revoke an approval',
-          security: [{ session: [] }, { approverDevice: [] }],
+          security: [{ session: [] }],
           parameters: [{ name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: { '204': { description: 'Revoked' }, ...standardErrors },
         },
@@ -617,6 +563,8 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
         post: {
           tags: ['contribution'],
           summary: 'Publish the approved artifact as an immutable version',
+          description:
+            'Send `approval_id` for a human approval. A connection its owner delegated publication to may omit it and send `acknowledged_warning_codes` for every warning instead. `draft_revision` and `payload_digest` must match the current draft either way.',
           security: [{ localfirstOAuth: ['projects:publish'] }, { session: [] }],
           parameters: [
             { name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } },
@@ -688,6 +636,8 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
         get: {
           tags: ['account'],
           summary: 'List agent grants (no token bodies)',
+          description:
+            'Each grant says whether it may publish without asking (`publication_delegated`) and lists up to 20 of its delegated publications, with the project or record state the owner needs to unpublish or withdraw them.',
           security: [{ session: [] }],
           responses: { '200': { description: 'Grants' }, ...standardErrors },
         },
@@ -695,10 +645,26 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
       '/api/v1/me/connections/{connection_id}': {
         delete: {
           tags: ['account'],
-          summary: 'Revoke an agent grant',
+          summary: 'Revoke an agent grant (also ends its publication delegation)',
           security: [{ session: [] }],
           parameters: [{ name: 'connection_id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: { '204': { description: 'Revoked' }, ...standardErrors },
+        },
+      },
+      '/api/v1/me/connections/{connection_id}/publication-delegation': {
+        put: {
+          tags: ['account'],
+          summary: 'Let this connection publish your drafts without per-artifact approval',
+          security: [{ session: [] }],
+          parameters: [{ name: 'connection_id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: { '204': { description: 'Delegated' }, ...standardErrors },
+        },
+        delete: {
+          tags: ['account'],
+          summary: 'Require your approval again for this connection; published artifacts are unchanged',
+          security: [{ session: [] }],
+          parameters: [{ name: 'connection_id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: { '204': { description: 'Delegation ended' }, ...standardErrors },
         },
       },
       '/api/v1/me/deletion-requests': {

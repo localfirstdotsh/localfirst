@@ -109,7 +109,9 @@ git diff --stat origin/staging...origin/dev       # shape of the change
 ```
 Call out DB migrations (`apps/api/drizzle`) and new/changed environment variables; confirm checks are
 green on `dev`; then `gh pr create --base staging --head dev`. Merge only after the user authorizes
-and required checks pass.
+and required checks pass. **Merging deploys staging**: Render rebuilds the staging services from the
+new commit and the API applies pending migrations first (see "Deployment" below), so say so when
+asking, and name any destructive migration.
 
 **staging → main** (production)
 Confirm staging verification actually passed, review the same log/diff plus migration and env
@@ -208,8 +210,12 @@ gh api repos/localfirstdotsh/localfirst/rulesets                 # find the id o
 gh api -X PUT repos/localfirstdotsh/localfirst/rulesets/<id> --input .agents/skills/git-workflow/reference/ruleset.json
 ```
 
-Deployment is a separate, later step: no deployment environments or deploy jobs exist in this repo,
-so CI runs checks only. Do not describe any merge as deploying anything.
+**Deployment.** CI runs checks only, but Render deploys staging on every commit to `staging`
+(`render.yaml`, `autoDeployTrigger: commit`): the API applies pending migrations as its pre-deploy step,
+then the API, worker and website roll. So a merge into `staging` is a staging deploy. Check it with
+`gh api repos/localfirstdotsh/localfirst/deployments` (Render reports each service's deployment there)
+and `GET /health/ready` on the staging API. Production has no services yet, so `main` deploys nothing.
+The process is in `docs/operations/RUNBOOK.md` ("Staging on Render").
 
 **npm releases.** `.github/workflows/release.yml` publishes the `localfirstdotsh` package when a
 `localfirstdotsh-v<version>` tag is pushed (betas from `staging`, stable from `main`, behind the

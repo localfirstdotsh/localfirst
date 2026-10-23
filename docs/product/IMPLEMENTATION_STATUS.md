@@ -26,7 +26,7 @@ that suite cannot prove is listed under *Known gaps*.
 | FR-03 | Immutable versions, attribution, explicit unknown fields, source provenance | Done |
 | FR-04 | Task/model/runtime/hardware search and conservative compatibility assessment | Done |
 | FR-05 | GitHub human sign-in; resource-scoped OAuth credentials for agents | Done; real GitHub sign-in verified on staging (2026-10-13) |
-| FR-06 | Exact-artifact approval, ownership checks, moderation, idempotency, audit | Done |
+| FR-06 | Exact-artifact approval or per-connection publication delegation, ownership checks, moderation, idempotency, audit | Done: API, MCP, Connections setting with delegated publications (unpublish/withdraw), review-page approve-and-delegate, public version label |
 | FR-07 | Five attributed Jetson/edge entries with no execution or endorsement claim | Done (seed) |
 | FR-08 | Public schema/spec retrieval and honest setup instructions | Done; the CLI package is declared unreleased |
 | FR-09 | Open-source local runner with separate Ollama and LM Studio adapters | Done (`packages/runner/`, package `localfirstdotsh`, unpublished); verified on macOS arm64 only |
@@ -307,18 +307,8 @@ that suite cannot prove is listed under *Known gaps*.
   operator reviews, not a verified fact.
 - **Operators review only reports their owner has published.** A private upload
   is never visible to the review queue.
-- **Local approval exists, with a weaker trust boundary than the browser.**
-  `auth approver-login` links a terminal through a code approved in a signed-in
-  browser; `contribution approve` then records the decision from that terminal
-  (BACKEND_PRD §10.4). Verified end to end on 2026-10-14 (`verify:local-approval`:
-  real runner CLI on a pseudo-terminal, real HTTP server, code approved in real
-  Chrome, 14 steps passed, including refusal on every other route, one-time
-  publication, and refusal after revocation). Limits:
-  - An agent with shell access on the linked machine can drive a pseudo-terminal
-    and answer the prompts, so the browser path stays the default.
-  - The OS keychain was stubbed in the drill; the real macOS keychain path was
-    exercised earlier, the Linux `secret-tool` path was not.
-  - The credential can read the exact content of its owner's drafts (needed to
-    show them); nothing else.
-  - `verify:local-approval` needs `python3` for the terminal and macOS-style
-    PATH stubs; it has not been run on Linux.
+- **There is no local approval channel.** The linked approval device
+  (`auth approver-login`, `contribution approve`, `/account/devices`) is retired
+  (BACKEND_PRD ADR-014): a person approves in the browser, or lets one connection
+  publish without asking. Migration `0010_retire_approval_device` drops its
+  credentials and link requests and revokes any unused approval it recorded.

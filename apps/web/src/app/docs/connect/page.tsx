@@ -50,7 +50,7 @@ export default async function ConnectDocsPage() {
         </details>
       </DocsSection>
       <DocsSection id="tools" title="Permissions and tools">
-        <p>Your agent can read projects, save private drafts, or publish according to the access you grant. Publishing always requires your separate approval of the exact version in your browser.</p>
+        <p>Your agent can read projects, save private drafts, or publish according to the access you grant. Publishing requires your separate approval of the exact version in your browser, unless you let that connection publish without asking in Connections.</p>
         <details className="docs-disclosure">
           <summary>View available tools</summary>
           <McpToolTable />

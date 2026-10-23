@@ -13,7 +13,7 @@ import type { AppEnv } from '../../http/context.js';
 import { ApiError } from '../../http/errors.js';
 import { parseIfMatchRevision, revisionEtag } from '../../http/envelope.js';
 import { success } from '../../http/middleware.js';
-import { requireApprover, requireScope } from '../../auth/guards.js';
+import { requireHuman, requireScope } from '../../auth/guards.js';
 import { loadReviewData } from '../../services/review.js';
 import { config } from '../../config.js';
 import {
@@ -31,6 +31,7 @@ import {
   serializeDraft,
 } from '../../services/drafts.js';
 import { publishProjectDraft } from '../../services/publication.js';
+import { isDelegated } from '../../services/delegation.js';
 import {
   PUBLISH_SCOPE,
   WRITE_SCOPE,
@@ -122,16 +123,23 @@ const approvalSchema = z
     payload_digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
     acknowledged_warning_codes: z.array(z.string().max(64)).max(50).default([]),
     decision: z.enum(['approved', 'denied']).default('approved'),
+    /** Also let the connection that created the draft publish without asking (section 10.4). */
+    delegate_connection: z.boolean().default(false),
   })
   .strict();
 
+/** An approval ID, or for a delegated connection its own warning acknowledgements instead. */
 const publishSchema = z
   .object({
-    approval_id: z.uuid(),
+    approval_id: z.uuid().optional(),
+    acknowledged_warning_codes: z.array(z.string().max(64)).max(50).optional(),
     draft_revision: z.int().positive(),
     payload_digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
   })
-  .strict();
+  .strict()
+  .refine((body) => !(body.approval_id && body.acknowledged_warning_codes), {
+    message: 'Send either approval_id or acknowledged_warning_codes, not both.',
+  });
 
 async function parseJson<T>(c: { req: { json: () => Promise<unknown> } }, schema: z.ZodType<T>): Promise<T> {
   let body: unknown;
@@ -288,7 +296,10 @@ draftRoutes.get('/:draft_id', requireScope('projects:draft', 'builds:write', 'te
   assertDraftScope(actor, draft.kind, 'write');
   const approval = await activeApproval(draft.id);
   c.header('ETag', revisionEtag(draft.revision));
-  return c.json(success(serializeDraft(draft, approval), c.get('requestId')));
+  return c.json(success(
+    { ...serializeDraft(draft, approval), publication_delegated: await isDelegated(actor) },
+    c.get('requestId'),
+  ));
 });
 
 draftRoutes.patch('/:draft_id', requireScope('projects:draft', 'builds:write', 'tests:submit', 'community:write'), async (c) => {
@@ -421,7 +432,7 @@ draftRoutes.post('/:draft_id/import', requireScope('projects:draft'), async (c) 
 
 // --- Human-only approval surface ------------------------------------------
 
-draftRoutes.get('/:draft_id/review', requireApprover(), async (c) => {
+draftRoutes.get('/:draft_id/review', requireHuman(), async (c) => {
   const draft = await loadOwnedDraft(c.get('actor'), c.req.param('draft_id'));
   const review = await loadReviewData(draft);
   const approval = await activeApproval(draft.id);
@@ -444,9 +455,9 @@ draftRoutes.get('/:draft_id/review', requireApprover(), async (c) => {
   );
 });
 
-draftRoutes.post('/:draft_id/approval', requireApprover(), async (c) => {
+draftRoutes.post('/:draft_id/approval', requireHuman(), async (c) => {
   const actor = c.get('actor');
-  if (actor.kind !== 'session' && actor.kind !== 'approver') throw ApiError.forbidden('A signed-in person is required.');
+  if (actor.kind !== 'session') throw ApiError.forbidden('A browser session is required.');
   const body = await parseJson(c, approvalSchema);
   const { approvalId, draft } = await createApproval({
     actor,
@@ -455,8 +466,8 @@ draftRoutes.post('/:draft_id/approval', requireApprover(), async (c) => {
     payloadDigest: body.payload_digest,
     acknowledgedWarningCodes: body.acknowledged_warning_codes,
     decision: body.decision,
-    sessionId: actor.kind === 'session' ? actor.sessionId : null,
-    approverCredentialId: actor.kind === 'approver' ? actor.credentialId : null,
+    sessionId: actor.sessionId,
+    delegateConnection: body.delegate_connection,
   });
   const approval = await activeApproval(draft.id);
   return c.json(
@@ -472,7 +483,7 @@ draftRoutes.post('/:draft_id/approval', requireApprover(), async (c) => {
   );
 });
 
-draftRoutes.delete('/:draft_id/approval', requireApprover(), async (c) => {
+draftRoutes.delete('/:draft_id/approval', requireHuman(), async (c) => {
   await revokeApproval(c.get('actor'), c.req.param('draft_id'));
   return c.body(null, 204);
 });
@@ -494,9 +505,10 @@ draftRoutes.post('/:draft_id/publish', requireScope('projects:publish', 'builds:
         const result = await publishRecordDraft({
           actor,
           draftId,
-          approvalId: body.approval_id,
+          approvalId: body.approval_id ?? null,
           draftRevision: body.draft_revision,
           payloadDigest: body.payload_digest,
+          acknowledgedWarningCodes: body.acknowledged_warning_codes ?? [],
         });
         return { status: 201, body: result as unknown as Record<string, unknown> };
       },
@@ -513,9 +525,10 @@ draftRoutes.post('/:draft_id/publish', requireScope('projects:publish', 'builds:
       const result = await publishProjectDraft({
         actor,
         draftId,
-        approvalId: body.approval_id,
+        approvalId: body.approval_id ?? null,
         draftRevision: body.draft_revision,
         payloadDigest: body.payload_digest,
+        acknowledgedWarningCodes: body.acknowledged_warning_codes ?? [],
       });
       return { status: 201, body: result as unknown as Record<string, unknown> };
     },

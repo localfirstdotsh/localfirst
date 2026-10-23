@@ -54,7 +54,7 @@ export interface ToolkitBoundary {
 }
 
 export const TOOLKIT_BOUNDARIES: readonly ToolkitBoundary[] = [
-  { title: 'A person approves every publication', body: 'Approval of the exact revision and digest happens in your browser or your own terminal. The skill cannot grant it.' },
+  { title: 'You decide what gets published', body: 'You approve the exact revision and digest in your browser, or let one connection publish without asking from Connections. The skill cannot grant either.' },
   { title: 'Nothing runs on the registry', body: 'There is no hosted run or code tool. Tests run on your machine, after you approve the exact plan.' },
   { title: 'Claims stay claims', body: 'Unknown model, runtime, hardware and license facts are marked unknown. A declared claim is never presented as tested evidence.' },
   { title: 'Credentials stay local', body: 'Runtime and GitHub tokens are never registry tokens, and nothing private goes into a draft or report.' },

@@ -44,12 +44,21 @@ export const projectPageSchema = z.object({
 });
 export type ProjectPage = z.infer<typeof projectPageSchema>;
 
+/** How a version was authorized: a person's exact approval, or a connection its owner lets publish without asking. */
+export const publicationSchema = z.object({
+  authorization: z.string(),
+  via_client_name: z.string().nullable(),
+  via_client_name_is_unverified: z.boolean(),
+});
+export type Publication = z.infer<typeof publicationSchema>;
+
 export const versionSummarySchema = z.object({
   project_version_id: z.string(),
   version_number: z.number().int(),
   spec_version: z.string(),
   content_digest: z.string(),
   published_at: z.string(),
+  publication: publicationSchema.optional(),
 });
 export type VersionSummary = z.infer<typeof versionSummarySchema>;
 
