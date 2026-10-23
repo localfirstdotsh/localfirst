@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const runner = fileURLToPath(new URL('../', import.meta.url));
@@ -35,9 +35,13 @@ const server = createServer((request, response) => {
   response.end(JSON.stringify({ resource: `http://127.0.0.1:${server.address().port}/mcp` }));
 });
 
+// An existing tarball (the exact file a release publishes) can be given as the
+// first argument; otherwise one is packed from this checkout.
+const given = process.argv[2] ? resolve(process.argv[2]) : null;
+
 try {
-  await run('pnpm', ['pack', '--pack-destination', temporary], runner);
-  const tarball = join(temporary, `localfirstdotsh-${manifest.version}.tgz`);
+  if (!given) await run('pnpm', ['pack', '--pack-destination', temporary], runner);
+  const tarball = given ?? join(temporary, `localfirstdotsh-${manifest.version}.tgz`);
   const archive = (await run('tar', ['-tzf', tarball])).trim().split('\n');
   for (const file of ['package/README.md', 'package/LICENSE', 'package/dist/cli/bin.js',
     'package/dist/contracts/index.js', 'package/dist/contracts/index.d.ts',
@@ -48,11 +52,14 @@ try {
   assert(!archive.some(file => /^package\/(?:src|test|scripts|coverage)(?:\/|$)|(?:^|\/)(?:node_modules|\.git)(?:\/|$)|(?:^|\/)\.env(?:[./]|$)/.test(file)),
     'Tarball includes development files or environment files');
   const packed = JSON.parse(await run('tar', ['-xOf', tarball, 'package/package.json']));
-  assert.equal(packed.version, '0.1.0');
+  assert.equal(packed.name, 'localfirstdotsh');
+  assert.equal(packed.version, manifest.version);
   assert.equal(packed.license, 'MIT');
   assert.notEqual(packed.private, true);
   assert(!Object.hasOwn(packed.dependencies, '@localfirst/contracts'));
   assert(!Object.values(packed.dependencies).some(version => version.startsWith('workspace:')));
+  // Workspace-only names (the @localfirst npm scope is not ours) must not appear anywhere in the manifest.
+  assert(!JSON.stringify(packed).includes('@localfirst/'), 'Packed manifest names a workspace-only package');
 
   await writeFile(join(temporary, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
   await run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--registry=https://registry.npmjs.org/', tarball]);
@@ -70,6 +77,10 @@ try {
   await inspect(join(installed, 'dist'));
   const cli = join(temporary, 'node_modules/.bin/localfirstdotsh');
   assert((await run(cli, ['help'])).startsWith(`localfirstdotsh ${manifest.version}\n`));
+  assert((await run(cli, ['--help'])).startsWith(`localfirstdotsh ${manifest.version}\n`));
+  assert.equal(await run(cli, ['--version']), `${manifest.version}\n`);
+  const samples = await run(cli, ['environment', 'samples']);
+  assert(samples.includes('bakery'), 'environment samples does not list the bundled samples');
   await run(process.execPath, ['--input-type=module', '-e',
     "import { compareReports } from 'localfirstdotsh'; if (typeof compareReports !== 'function') process.exit(1);"]);
   await run(process.execPath, ['--input-type=module', '-e',

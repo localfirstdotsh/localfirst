@@ -75,6 +75,124 @@ using them. An image older than that release fails on draft approval and
 publication against the new schema, so roll forward instead of back past it.
 Staging applied it on 2026-10-23; production starts from an empty database.
 
+## npm package release (`localfirstdotsh`)
+
+The runner in `packages/runner/` is published to npm as the unscoped package
+`localfirstdotsh` (executable `localfirstdotsh`), owned by the `localfirstdotsh` npm
+organization. `.github/workflows/release.yml` publishes it, and only when a
+`localfirstdotsh-v<version>` tag is pushed:
+
+| Tag | npm dist-tag | Tagged commit must be on |
+| --- | --- | --- |
+| `localfirstdotsh-vX.Y.Z-beta.N` | `beta` | `staging` |
+| `localfirstdotsh-vX.Y.Z` | `latest` | `main` |
+
+The `plan` job refuses a tag that differs from `packages/runner/package.json`, any
+other prerelease form, a commit outside the required branch, and a version already on
+npm. `check` reruns `ci.yml` on the tagged commit. `publish` waits for the `npm`
+environment's approval, packs once, runs `test-package.mjs` against that exact tarball,
+publishes it with provenance through npm Trusted Publishing (GitHub OIDC; no npm token
+exists), and confirms the dist-tag on the registry. Releases run one at a time and are
+never cancelled midway.
+
+**Accounts.** npm: a member of the `localfirstdotsh` org with two-factor
+authentication (required by `npm trust` and by manual publishing) and npm ≥ 11.15.
+GitHub: admin on `localfirstdotsh/localfirst` for the one-time settings, write access
+to push tags.
+
+### One-time setup
+
+1. **GitHub environment.** Settings → Environments → New environment `npm`. Add
+   required reviewers (`RidwanG206`), and under deployment branches and tags choose
+   "Selected" with the tag pattern `localfirstdotsh-v*`.
+2. **Tag protection (recommended).** Settings → Rules → New tag ruleset targeting
+   `localfirstdotsh-v*`: restrict deletions and updates (and creation to admins if
+   others get write access), so a published version's tag cannot be moved.
+3. **First publish (bootstrap).** npm only accepts a trusted publisher for a package
+   that already exists, so `0.1.0-beta.0` is published once by hand, from the staging
+   commit that carries that version, after the release PR reaches `staging`:
+
+   ```sh
+   git fetch origin
+   git worktree add --detach ../localfirst-release origin/staging
+   cd ../localfirst-release && pnpm install --frozen-lockfile
+   out="$(mktemp -d)"
+   (cd packages/runner && pnpm pack --pack-destination "$out")
+   node packages/runner/scripts/test-package.mjs "$out/localfirstdotsh-0.1.0-beta.0.tgz"
+   npm publish "$out/localfirstdotsh-0.1.0-beta.0.tgz" --tag beta --access public
+   ```
+
+   This one version has no provenance statement (that needs CI); every later
+   version does. Because the package has no `latest` yet, npm also points
+   `latest` at this first version; check with `npm view localfirstdotsh dist-tags`.
+   Later betas never move `latest`, and the first stable release takes it over.
+4. **Org access, trusted publisher, token lockdown.**
+
+   ```sh
+   npm access grant read-write localfirstdotsh:developers localfirstdotsh
+   npm trust github localfirstdotsh --file release.yml \
+     --repository localfirstdotsh/localfirst --environment npm --allow-publish
+   npm trust list localfirstdotsh
+   ```
+
+   The web equivalent is npmjs.com → `localfirstdotsh` → Settings → Trusted
+   Publisher: GitHub Actions, organization `localfirstdotsh`, repository
+   `localfirst`, workflow `release.yml`, environment `npm`. Then, on the same page,
+   set Publishing access to "Require two-factor authentication and disallow tokens";
+   trusted publishing keeps working.
+5. Optionally record the bootstrap version with a tag
+   (`git tag -a localfirstdotsh-v0.1.0-beta.0 origin/staging -m "localfirstdotsh 0.1.0-beta.0"`
+   and push it). The Release run it starts stops at the already-published check, by design.
+
+### Publish another beta
+
+1. On a task branch from `dev`, bump the version and open a PR into `dev`:
+   `cd packages/runner && npm version prerelease --preid beta --no-git-tag-version`
+   (`0.1.0-beta.0` → `0.1.0-beta.1`). Promote `dev` → `staging` as usual (authorized).
+2. Tag the staging commit and push the tag:
+
+   ```sh
+   git fetch origin
+   git tag -a localfirstdotsh-v0.1.0-beta.1 origin/staging -m "localfirstdotsh 0.1.0-beta.1"
+   git push origin localfirstdotsh-v0.1.0-beta.1
+   ```
+
+3. Approve the `npm` deployment in the Actions run.
+
+### Stable release
+
+Set the version to the plain `X.Y.Z` the betas led up to
+(`npm version 0.1.0 --no-git-tag-version`), PR it into `dev`, promote through
+`staging` to `main` with the usual authorization, then tag the `main` commit
+(`localfirstdotsh-v0.1.0`) and approve the run. A stable version is always its own
+publish from `main`; `latest` is not moved onto a beta.
+
+### Verify a published version
+
+```sh
+npm view localfirstdotsh dist-tags
+npm view localfirstdotsh@0.1.0-beta.1 version dist.integrity
+npx -y localfirstdotsh@beta --version
+```
+
+The npm package page shows the provenance link to the workflow run. In a project
+that installs it, `npm audit signatures` checks the signature and provenance.
+
+### Recover from a failed publish
+
+npm never accepts a version twice, even after unpublishing, so recovery moves forward.
+
+- **Failed before the Publish step** (`plan`, `check`, pack or package test): nothing
+  reached npm. Fix on a task branch. If `npm view localfirstdotsh@<version>` still
+  404s, delete the tag (`git push origin :refs/tags/<tag>`) and tag the fixed commit;
+  otherwise bump.
+- **Publish succeeded, verification failed**: usually registry lag. Check
+  `npm view`; do not publish again by hand.
+- **A broken version was published**: bump to the next version and release it, then
+  `npm deprecate localfirstdotsh@<bad> "Broken; use <good>"`. If `latest` is wrong:
+  `npm dist-tag add localfirstdotsh@<good> latest`.
+- Re-running a failed run is safe: `plan` refuses a version that is already published.
+
 ## Auth dependency upgrades
 
 Better Auth owns its own tables. After changing its version or plugins:

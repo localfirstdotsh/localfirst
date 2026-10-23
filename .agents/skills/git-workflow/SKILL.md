@@ -217,6 +217,11 @@ then the API, worker and website roll. So a merge into `staging` is a staging de
 and `GET /health/ready` on the staging API. Production has no services yet, so `main` deploys nothing.
 The process is in `docs/operations/RUNBOOK.md` ("Staging on Render").
 
+**npm releases.** `.github/workflows/release.yml` publishes the `localfirstdotsh` package when a
+`localfirstdotsh-v<version>` tag is pushed (betas from `staging`, stable from `main`, behind the
+`npm` environment). Pushing such a tag publishes to npm: create or push one only on the user's
+explicit instruction. The process is in `docs/operations/RUNBOOK.md` ("npm package release").
+
 ## GitHub protection (current status)
 
 `localfirstdotsh/localfirst` is a public repo with the ruleset **`permanent-branches` active** on `main`,
