@@ -10,10 +10,12 @@
  * consumes at once, so every published artifact has exactly one approval.
  */
 
-import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { ERROR_CODES } from '@localfirst/contracts';
-import { drafts, publicationApprovals, publicationDelegations } from '../db/schema/registry.js';
+import { drafts, projects, projectVersions, publicationApprovals, publicationDelegations } from '../db/schema/registry.js';
 import { oauthClientTable, oauthConsentTable } from '../db/schema/auth.js';
+import { buildConfigurations, runReports } from '../db/schema/evidence.js';
+import { communityRecords } from '../db/schema/community.js';
 import { db, type DbOrTx } from '../db/client.js';
 import { ApiError } from '../http/errors.js';
 import type { Actor } from '../http/context.js';
@@ -210,7 +212,51 @@ export interface DelegatedPublication {
   draft_id: string;
   project_version_id: string | null;
   record_id: string | null;
+  /** The project a delegated project version belongs to, for the owner's link and unpublish action. */
+  project: { project_id: string; slug: string; version_number: number; visibility: string } | null;
+  /** A delegated record's current visibility, so a withdrawn one is shown as such. */
+  record_visibility: string | null;
   published_at: string | null;
+}
+
+/** Current visibility of published records, by ID, for the kinds a connection can publish. */
+async function recordVisibility(ids: { kind: string; id: string }[]): Promise<Map<string, string>> {
+  const of = (kinds: string[]) => ids.filter((item) => kinds.includes(item.kind)).map((item) => item.id);
+  const [builds, reports, community] = [of(['build']), of(['test_result']), of(['collection', 'troubleshooting'])];
+  const rows = await Promise.all([
+    builds.length ? db().select({ id: buildConfigurations.id, visibility: buildConfigurations.visibility }).from(buildConfigurations).where(inArray(buildConfigurations.id, builds)) : [],
+    reports.length ? db().select({ id: runReports.id, visibility: runReports.visibility }).from(runReports).where(inArray(runReports.id, reports)) : [],
+    community.length ? db().select({ id: communityRecords.id, visibility: communityRecords.visibility }).from(communityRecords).where(inArray(communityRecords.id, community)) : [],
+  ]);
+  return new Map(rows.flat().map((row) => [row.id, row.visibility]));
+}
+
+/**
+ * For the review page: the connection that created a draft, when the owner
+ * still authorizes it, so "approve and let it publish without asking" can
+ * name it. Null for a draft made in the browser or by a revoked connection.
+ */
+export async function creatingConnection(userId: string, clientId: string | null): Promise<{
+  connection_id: string;
+  client_name: string | null;
+  client_name_is_unverified: true;
+  publication_delegated: boolean;
+} | null> {
+  if (!clientId) return null;
+  const [row] = await db()
+    .select({ id: oauthConsentTable.id, name: oauthClientTable.name, delegation: publicationDelegations.id })
+    .from(oauthConsentTable)
+    .leftJoin(oauthClientTable, eq(oauthClientTable.clientId, oauthConsentTable.clientId))
+    .leftJoin(publicationDelegations, eq(publicationDelegations.consentId, oauthConsentTable.id))
+    .where(and(eq(oauthConsentTable.userId, userId), eq(oauthConsentTable.clientId, clientId)))
+    .limit(1);
+  if (!row) return null;
+  return {
+    connection_id: row.id,
+    client_name: row.name?.trim() || null,
+    client_name_is_unverified: true,
+    publication_delegated: row.delegation !== null,
+  };
 }
 
 /** For the owner's connections page: which connections are delegated and what they published. */
@@ -230,9 +276,15 @@ export async function delegationSummary(userId: string): Promise<{
       versionId: drafts.publishedVersionId,
       payload: drafts.payload,
       consumedAt: publicationApprovals.consumedAt,
+      projectId: projects.id,
+      slug: projects.slug,
+      versionNumber: projectVersions.versionNumber,
+      visibility: projects.visibility,
     })
     .from(publicationApprovals)
     .innerJoin(drafts, eq(drafts.id, publicationApprovals.draftId))
+    .leftJoin(projectVersions, eq(projectVersions.id, drafts.publishedVersionId))
+    .leftJoin(projects, eq(projects.id, projectVersions.projectId))
     .where(
       and(
         eq(publicationApprovals.actorUserId, userId),
@@ -242,17 +294,31 @@ export async function delegationSummary(userId: string): Promise<{
     )
     .orderBy(desc(publicationApprovals.consumedAt))
     .limit(200);
+  const recordIdOf = (row: (typeof rows)[number]) => {
+    const recordId = (row.payload as { record_id?: unknown } | null)?.record_id;
+    return typeof recordId === 'string' ? recordId : null;
+  };
+  const visibility = await recordVisibility(
+    rows.flatMap((row) => {
+      const id = recordIdOf(row);
+      return id ? [{ kind: row.kind, id }] : [];
+    }),
+  );
   const publicationsByClient = new Map<string, DelegatedPublication[]>();
   for (const row of rows) {
     if (!row.clientId) continue;
     const list = publicationsByClient.get(row.clientId) ?? [];
     if (list.length >= 20) continue;
-    const recordId = (row.payload as { record_id?: unknown } | null)?.record_id;
+    const recordId = recordIdOf(row);
     list.push({
       kind: row.kind,
       draft_id: row.draftId,
       project_version_id: row.versionId,
-      record_id: typeof recordId === 'string' ? recordId : null,
+      record_id: recordId,
+      project: row.projectId && row.slug && row.versionNumber !== null && row.visibility
+        ? { project_id: row.projectId, slug: row.slug, version_number: row.versionNumber, visibility: row.visibility }
+        : null,
+      record_visibility: recordId ? visibility.get(recordId) ?? null : null,
       published_at: row.consumedAt?.toISOString() ?? null,
     });
     publicationsByClient.set(row.clientId, list);

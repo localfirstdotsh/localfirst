@@ -26,7 +26,7 @@ that suite cannot prove is listed under *Known gaps*.
 | FR-03 | Immutable versions, attribution, explicit unknown fields, source provenance | Done |
 | FR-04 | Task/model/runtime/hardware search and conservative compatibility assessment | Done |
 | FR-05 | GitHub human sign-in; resource-scoped OAuth credentials for agents | Done; real GitHub sign-in verified on staging (2026-10-13) |
-| FR-06 | Exact-artifact approval or per-connection publication delegation, ownership checks, moderation, idempotency, audit | Done in API/MCP; website delegation controls pending |
+| FR-06 | Exact-artifact approval or per-connection publication delegation, ownership checks, moderation, idempotency, audit | Done: API, MCP, Connections setting with delegated publications (unpublish/withdraw), review-page approve-and-delegate, public version label |
 | FR-07 | Five attributed Jetson/edge entries with no execution or endorsement claim | Done (seed) |
 | FR-08 | Public schema/spec retrieval and honest setup instructions | Done; the CLI package is declared unreleased |
 | FR-09 | Open-source local runner with separate Ollama and LM Studio adapters | Done (`packages/runner/`, package `localfirstdotsh`, unpublished); verified on macOS arm64 only |
@@ -307,11 +307,6 @@ that suite cannot prove is listed under *Known gaps*.
   operator reviews, not a verified fact.
 - **Operators review only reports their owner has published.** A private upload
   is never visible to the review queue.
-- **Publication delegation has no website controls yet.** The API, MCP tools,
-  migration `0009` and public version label are in place (BACKEND_PRD §10.4);
-  the Connections toggle, the review page's "Approve and let <client> publish
-  without asking" action, and the label on project pages are not built, so
-  today delegation can only be turned on through the session-only REST route.
 - **Local approval exists, with a weaker trust boundary than the browser.**
   `auth approver-login` links a terminal through a code approved in a signed-in
   browser; `contribution approve` then records the decision from that terminal

@@ -690,6 +690,8 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
         get: {
           tags: ['account'],
           summary: 'List agent grants (no token bodies)',
+          description:
+            'Each grant says whether it may publish without asking (`publication_delegated`) and lists up to 20 of its delegated publications, with the project or record state the owner needs to unpublish or withdraw them.',
           security: [{ session: [] }],
           responses: { '200': { description: 'Grants' }, ...standardErrors },
         },
