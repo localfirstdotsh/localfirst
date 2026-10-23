@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
+import { SignOutButton } from '../composites/SignOutButton';
+import type { AccountSession } from '../../lib/account-session';
 
 const LINKS = [
   { href: '/docs', label: 'Docs' },
 ] as const;
 const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock']);
 
-export function NavLinks({ account }: { account: { handle: string | null } | null }) {
+export function NavLinks({ account }: { account: AccountSession | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
@@ -64,6 +66,7 @@ export function NavLinks({ account }: { account: { handle: string | null } | nul
         {account
           ? <Link href="/account/projects" className="nav-account" aria-current={pathname.startsWith('/account') ? 'page' : undefined} onClick={() => setOpen(false)}><Icon name="account" />Account{account.handle && <span className="visually-hidden"> (signed in as {account.handle})</span>}</Link>
           : pathname !== '/sign-in' && <a href="/sign-in" className="button button-small nav-sign-in" onClick={() => setOpen(false)}>Sign in</a>}
+        {account && !pathname.startsWith('/account') && <SignOutButton authBase={account.authBase} className="nav-sign-out">Sign out</SignOutButton>}
       </nav>
     </>
   );

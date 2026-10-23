@@ -64,4 +64,18 @@ test.describe('account area layout', () => {
     await expect(page.getByRole('alert').filter({ hasText: 'unknown, already used, or expired' })).toBeVisible();
     await expect(page.getByLabel('Link code')).toHaveAttribute('aria-invalid', 'true');
   });
+
+  test('signs out through the auth service and returns home, and reports a failure', async ({ page }) => {
+    await page.goto('/account/projects');
+    const signOut = page.getByRole('navigation', { name: 'Account' }).getByRole('button', { name: 'Sign out' });
+    await page.route('**/api/auth/sign-out', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: { message: 'Fixture sign-out failure' } }) }));
+    await signOut.click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Fixture sign-out failure' })).toBeVisible();
+    await expect(page).toHaveURL(/\/account\/projects$/);
+    await page.unroute('**/api/auth/sign-out');
+    const request = page.waitForRequest((r) => r.method() === 'POST' && r.url().endsWith('/api/auth/sign-out'));
+    await signOut.click();
+    await request;
+    await expect(page).toHaveURL(/\/$/);
+  });
 });

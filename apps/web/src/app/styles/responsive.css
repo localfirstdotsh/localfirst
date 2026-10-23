@@ -8,7 +8,8 @@
   .site-header .mobile-menu-button { display: inline-flex; }
   .nav { display: none; position: absolute; top: calc(100% + 8px); inset-inline: 0; gap: 4px; padding: 8px; border: 1px solid var(--header-border); border-radius: 24px; background: linear-gradient(135deg, rgb(255 255 255 / .1), transparent 65%), var(--header-surface); box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), 0 4px 20px rgb(0 0 0 / .08); backdrop-filter: blur(24px) saturate(160%); }
   .nav[data-open='true'] { display: flex; flex-direction: column; align-items: stretch; }
-  .nav a { justify-content: flex-start; padding: 10px 16px; min-height: 44px; }
+  .nav a, .nav .nav-sign-out { justify-content: flex-start; padding: 10px 16px; min-height: 44px; }
+  .nav .sign-out-error { position: static; padding: 0 16px 8px; background: none; }
   .getting-started { grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .home { padding-top: 40px; }
 }
