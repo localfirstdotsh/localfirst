@@ -2,8 +2,8 @@ import type { CliEnv } from './context.js';
 import { environmentPrepare, environmentPlan, environmentRun, environmentRemove, environmentSamples } from './commands/environment.js';
 import { frameworkPrepare } from './commands/framework.js';
 import { CliError, EXIT } from './errors.js';
-import { authApproverLogin, authSetToken } from './commands/auth.js';
-import { contributionApprove, contributionReview } from './commands/contribution.js';
+import { authSetToken } from './commands/auth.js';
+import { contributionReview } from './commands/contribution.js';
 import { MCP_CLIENTS, mcpAdd } from './commands/mcp.js';
 import { projectExport } from './commands/project.js';
 import { reportCompare, reportExport, reportShow, reportSubmit, reportTrace } from './commands/report.js';
@@ -33,8 +33,6 @@ Usage:
   localfirstdotsh report export <report> --review [--test-definition-id <id>] [--model-source-url <https-url>]
   localfirstdotsh report submit <export-file> [--registry <url>]
   localfirstdotsh contribution review <draft-id> [--registry <url>] [--open]
-  localfirstdotsh contribution approve <draft-id> [--deny] [--registry <url>]
-  localfirstdotsh auth approver-login [--registry <url>] [--label <name>]
   localfirstdotsh auth set-token [--registry <url> | --lmstudio-endpoint <url>]
 
 The registry URL comes from --registry or LOCALFIRST_REGISTRY; there is no default.
@@ -51,8 +49,8 @@ const COMMANDS: Record<string, Record<string, Handler>> = {
   runtime: { discover: runtimeDiscover },
   test: { plan: testPlan, run: testRun },
   report: { show: reportShow, trace: reportTrace, compare: reportCompare, export: reportExport, submit: reportSubmit },
-  contribution: { review: contributionReview, approve: contributionApprove },
-  auth: { 'set-token': authSetToken, 'approver-login': authApproverLogin },
+  contribution: { review: contributionReview },
+  auth: { 'set-token': authSetToken },
   mcp: { add: mcpAdd },
 };
 

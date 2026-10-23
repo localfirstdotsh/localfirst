@@ -5,7 +5,7 @@ import {
   accountTable, oauthAccessTokenTable, oauthConsentTable, oauthRefreshTokenTable, sessionTable,
 } from '../db/schema/auth.js';
 import {
-  approverCredentials, approverLinks, claimRequests, drafts, idempotencyRecords, jobs, operations, projects,
+  claimRequests, drafts, idempotencyRecords, jobs, operations, projects,
   publicationApprovals, searchDocuments, userProfiles,
 } from '../db/schema/registry.js';
 import { buildConfigurations, runReports } from '../db/schema/evidence.js';
@@ -87,8 +87,6 @@ export async function requestAccountDeletion(actor: Actor, handle: string) {
     await tx.delete(publicationApprovals).where(eq(publicationApprovals.actorUserId, actor.userId));
     await tx.delete(drafts).where(eq(drafts.ownerUserId, actor.userId));
     await tx.delete(claimRequests).where(eq(claimRequests.requesterUserId, actor.userId));
-    await tx.delete(approverCredentials).where(eq(approverCredentials.userId, actor.userId));
-    await tx.delete(approverLinks).where(eq(approverLinks.userId, actor.userId));
     await tx.delete(oauthConsentTable).where(eq(oauthConsentTable.userId, actor.userId));
     await tx.delete(oauthAccessTokenTable).where(eq(oauthAccessTokenTable.userId, actor.userId));
     await tx.delete(oauthRefreshTokenTable).where(eq(oauthRefreshTokenTable.userId, actor.userId));
@@ -104,7 +102,7 @@ export async function requestAccountDeletion(actor: Actor, handle: string) {
       requested_at: requestedAt.toISOString(),
       effects: {
         private_records: 'Drafts, approvals, claims, private builds, test results and community records, operations, import jobs, and replay records are removed.',
-        agent_grants: 'Sessions, provider credentials, consent, access and refresh authorizations, and linked approval devices are removed.',
+        agent_grants: 'Sessions, provider credentials, consent, access and refresh authorizations, and publication delegations are removed.',
         public_contributions: managed.map((project) => ({ project_id: project.id, slug: project.slug, handling: 'withdrawn' })),
         public_evidence: { handling: 'withdrawn', withdrawn_reports: withdrawn.length, withdrawn_builds: withdrawnBuilds.length },
         public_community_records: { handling: 'withdrawn', withdrawn_records: withdrawnRecords.length },

@@ -313,12 +313,6 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
           name: 'better-auth.session_token',
           description: 'Human browser session. Required for approval and other human-only routes.',
         },
-        approverDevice: {
-          type: 'http',
-          scheme: 'bearer',
-          description:
-            'A machine the person linked with `auth approver-login`. It records or reads a publication decision and is refused on every other route; it cannot be granted through OAuth or MCP consent.',
-        },
       },
       schemas: {
         ProjectSpecification: { oneOf: [projectJsonSchema(config.apiBaseUrl), versioned['project/v0.3']] },
@@ -540,58 +534,10 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
           tags: ['contribution'],
           summary: 'Read the exact artifact a person is asked to approve',
           description:
-            'Returns the public text, bundled files, blocking issues, and warning codes for the current revision. A browser session or a linked approval device only.',
-          security: [{ session: [] }, { approverDevice: [] }],
+            'Returns the public text, bundled files, blocking issues, and warning codes for the current revision. A browser session only.',
+          security: [{ session: [] }],
           parameters: [{ name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: { '200': { description: 'Exact review data' }, ...standardErrors },
-        },
-      },
-      '/api/v1/approver-links': {
-        post: {
-          tags: ['contribution'],
-          summary: 'Start linking a machine as an approval device',
-          description:
-            'Anonymous. Returns a short code to compare in the browser and a poll secret only the machine holds. Nothing is granted until a signed-in browser session approves the code.',
-          security: [],
-          requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { client_label: { type: 'string' } } } } } },
-          responses: { '201': { description: 'Link started' }, ...standardErrors },
-        },
-      },
-      '/api/v1/approver-links/decision': {
-        post: {
-          tags: ['contribution'],
-          summary: 'Approve or deny a link code in a browser session',
-          security: [{ session: [] }],
-          requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
-          responses: { '200': { description: 'Decision recorded' }, ...standardErrors },
-        },
-      },
-      '/api/v1/approver-links/{link_id}/token': {
-        post: {
-          tags: ['contribution'],
-          summary: 'Redeem an approved link for a credential, once',
-          description: '202 while the person has not decided; 410 when denied, expired, or already redeemed.',
-          security: [],
-          parameters: [{ name: 'link_id', in: 'path', required: true, schema: { type: 'string' } }],
-          requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
-          responses: { '200': { description: 'Credential issued' }, '202': { description: 'Authorization pending' }, ...standardErrors },
-        },
-      },
-      '/api/v1/me/approver-devices': {
-        get: {
-          tags: ['contribution'],
-          summary: 'List your linked approval devices',
-          security: [{ session: [] }],
-          responses: { '200': { description: 'Devices' }, ...standardErrors },
-        },
-      },
-      '/api/v1/me/approver-devices/{device_id}': {
-        delete: {
-          tags: ['contribution'],
-          summary: 'Revoke a linked approval device',
-          security: [{ session: [] }],
-          parameters: [{ name: 'device_id', in: 'path', required: true, schema: { type: 'string' } }],
-          responses: { '204': { description: 'Revoked' }, ...standardErrors },
         },
       },
       '/api/v1/drafts/{draft_id}/approval': {
@@ -599,8 +545,8 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
           tags: ['contribution'],
           summary: 'Record a human approval of the exact artifact',
           description:
-            'A browser session, or an approval device the person linked from their own machine. An agent token cannot create an approval, and the approval is single use with a short expiry. With `delegate_connection: true` (browser session only), the same request also lets the connection that created the draft publish without asking.',
-          security: [{ session: [] }, { approverDevice: [] }],
+            'A browser session only. An agent token cannot create an approval, and the approval is single use with a short expiry. With `delegate_connection: true`, the same request also lets the connection that created the draft publish without asking.',
+          security: [{ session: [] }],
           parameters: [{ name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } }],
           requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
           responses: { '201': { description: 'Approval recorded' }, ...standardErrors },
@@ -608,7 +554,7 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
         delete: {
           tags: ['contribution'],
           summary: 'Revoke an approval',
-          security: [{ session: [] }, { approverDevice: [] }],
+          security: [{ session: [] }],
           parameters: [{ name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: { '204': { description: 'Revoked' }, ...standardErrors },
         },

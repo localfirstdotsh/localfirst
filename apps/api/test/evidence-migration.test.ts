@@ -292,3 +292,54 @@ describe('P1 to P2 projection upgrade', () => {
     } finally { await rm(folder, { recursive: true, force: true }); }
   });
 });
+
+describe('approval device retirement (0010)', () => {
+  it('revokes unused device approvals, keeps every other approval, and drops the device tables', async () => {
+    const folder = await mkdtemp(join(tmpdir(), 'localfirst-device-upgrade-'));
+    try {
+      await cp(MIGRATIONS, folder, { recursive: true });
+      const journalPath = join(folder, 'meta', '_journal.json');
+      const journal = JSON.parse(await readFile(journalPath, 'utf8'));
+      journal.entries = journal.entries.filter((entry: { tag: string }) => entry.tag < '0010');
+      await writeFile(journalPath, JSON.stringify(journal));
+      await withThrowawayDatabase(async (url, pool) => {
+        const conn = drizzle(pool);
+        await migrate(conn, { migrationsFolder: folder });
+        const now = new Date();
+        await conn.insert(schema.userTable).values({ id: 'device-owner', name: 'Owner', email: 'owner@test.invalid', emailVerified: false, createdAt: now, updatedAt: now });
+        const { rows: [credential] } = await pool.query<{ id: string }>(
+          `insert into approver_credentials (user_id, secret_hash, label, expires_at) values ('device-owner', 'hash', 'laptop', now() + interval '30 days') returning id`,
+        );
+        await pool.query(`insert into approver_links (user_code, poll_hash, client_label, state, user_id, expires_at) values ('ABCD2345', 'poll', 'laptop', 'pending', 'device-owner', now() + interval '10 minutes')`);
+        const DIGEST = digestOf('retired-device-draft');
+        const approval = async (credentialId: string | null, consumed: boolean) => {
+          const { rows: [draft] } = await pool.query<{ id: string }>(
+            `insert into drafts (kind, owner_user_id, payload, payload_digest) values ('project', 'device-owner', '{}', $1) returning id`,
+            [DIGEST],
+          );
+          const { rows: [row] } = await pool.query<{ id: string }>(
+            `insert into publication_approvals (draft_id, kind, actor_user_id, draft_revision, payload_digest, acknowledged_warning_codes, policy_version, session_id, approver_credential_id, expires_at, consumed_at)
+             values ($1, 'project', 'device-owner', 1, $5, '[]', 'v', $2, $3, now() + interval '30 minutes', $4) returning id`,
+            [draft!.id, credentialId ? null : 'session-1', credentialId, consumed ? new Date() : null, DIGEST],
+          );
+          return row!.id;
+        };
+        const deviceUnused = await approval(credential!.id, false);
+        const deviceUsed = await approval(credential!.id, true);
+        const browserUnused = await approval(null, false);
+
+        await runMigrations(url);
+
+        const { rows } = await pool.query<{ id: string; revoked_at: Date | null; consumed_at: Date | null }>('select id, revoked_at, consumed_at from publication_approvals');
+        const byId = new Map(rows.map((row) => [row.id, row]));
+        expect(byId.get(deviceUnused)?.revoked_at).toBeInstanceOf(Date);
+        expect(byId.get(deviceUsed)).toMatchObject({ revoked_at: null, consumed_at: expect.any(Date) });
+        expect(byId.get(browserUnused)).toMatchObject({ revoked_at: null, consumed_at: null });
+        const { rows: tables } = await pool.query(`select table_name from information_schema.tables where table_name in ('approver_credentials', 'approver_links')`);
+        expect(tables).toEqual([]);
+        const { rows: columns } = await pool.query(`select column_name from information_schema.columns where table_name = 'publication_approvals' and column_name = 'approver_credential_id'`);
+        expect(columns).toEqual([]);
+      });
+    } finally { await rm(folder, { recursive: true, force: true }); }
+  });
+});

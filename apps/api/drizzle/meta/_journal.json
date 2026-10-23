@@ -71,6 +71,13 @@
       "when": 1792744471540,
       "tag": "0009_delegated_publishing",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792790129717,
+      "tag": "0010_retire_approval_device",
+      "breakpoints": true
     }
   ]
 }

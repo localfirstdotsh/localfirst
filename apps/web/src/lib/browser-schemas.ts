@@ -31,9 +31,6 @@ export const ownedProjectsSchema = z.object({ items: z.array(ownedProjectSchema)
 export const usageDaySchema = z.object({ day: z.string(), spec_exports: z.number().nonnegative(), agent_retrievals: z.number().nonnegative() });
 export const ownedUsageSchema = z.object({ project: ownedProjectSchema, range: z.union([z.literal(30), z.literal(90)]), days: z.array(usageDaySchema) });
 export type OwnedUsage = z.infer<typeof ownedUsageSchema>;
-export const deviceSchema = z.object({ device_id: z.string(), label: z.string(), created_at: z.string(), expires_at: z.string(), last_used_at: z.string().nullable() });
-export const devicesSchema = z.object({ link: z.object({ client_label: z.string(), user_code: z.string() }).nullable(), devices: z.array(deviceSchema) });
-export type DevicesData = z.infer<typeof devicesSchema>;
 export const deletionPreviewSchema = z.object({ handle: z.string(), managed_projects: z.array(z.object({ slug: z.string() })) });
 export type DeletionPreview = z.infer<typeof deletionPreviewSchema>;
 

@@ -16,9 +16,8 @@ be quoted strings.
    `draft_update`, which returns a new revision and digest. Validation only inspects; nothing runs.
 5. **Hand over for approval, unless delegated.** `draft_get` returns `publication_delegated`. If it
    is true, the user lets this connection publish without asking: go to step 6. Otherwise give the
-   user the review URL, or tell them to run
-   `localfirstdotsh contribution review <draft-id>` and `contribution approve <draft-id>` in their
-   own terminal. Wait. Do not poll for approval in a loop and do not ask the user to approve on your
+   user the review URL to approve in their browser
+   (`localfirstdotsh contribution review <draft-id> --open` opens it from a terminal). Wait. Do not poll for approval in a loop and do not ask the user to approve on your
    behalf.
 6. **Publish.** `contribution_publish` with the draft ID, approval ID, revision, digest and a new
    idempotency key. Approval is single use and short lived; if it has expired or the revision

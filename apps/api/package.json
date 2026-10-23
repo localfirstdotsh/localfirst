@@ -22,7 +22,6 @@
     "verify:restore": "tsx src/verification/restore.ts",
     "verify:mcp-client": "tsx src/verification/mcp-client.ts",
     "verify:browser-consent": "tsx src/verification/browser-consent.ts",
-    "verify:local-approval": "tsx src/verification/local-approval.ts",
     "verify:environments": "tsx src/verification/environments.ts",
     "verify:cli-examples": "tsx src/verification/cli-examples.ts",
     "verify:github": "tsx src/verification/github.ts",
