@@ -58,6 +58,15 @@ const ROWS: Row[] = [
       { file: `${B}/evidence-publication.test.ts`, title: 'consumes an approval exactly once under concurrent publication' },
       { file: `${B}/evidence-publication.test.ts`, title: 'blocks publication when the record is withdrawn after approval' },
       { file: `${A}/contribution-flow.test.ts`, title: '[C4]' },
+      { file: `${B}/publication-delegation.test.ts`, title: 'refuses publishing without an approval until the owner delegates, and only a browser session can delegate' },
+    ],
+  },
+  {
+    threat: 'Unwanted publication by a delegated agent',
+    proofs: [
+      { file: `${B}/publication-delegation.test.ts`, title: 'lets a delegated connection publish the exact artifact it names, with its own warning acknowledgements, and labels the version' },
+      { file: `${B}/publication-delegation.test.ts`, title: 'is scoped to one connection, and ends when the owner turns it off or revokes the connection' },
+      { file: `${B}/publication-delegation.test.ts`, title: 'can be enabled while approving, only for the connection that created the draft, atomically' },
     ],
   },
   {

@@ -23,7 +23,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { userTable } from './auth.js';
+import { oauthConsentTable, userTable } from './auth.js';
 
 /** PostgreSQL full-text search vector (section 18.1). */
 export const tsvector = customType<{ data: string; driverData: string }>({
@@ -155,11 +155,16 @@ export const projectVersions = pgTable(
       .references(() => userTable.id, { onDelete: 'restrict' }),
     publishedFromDraftId: uuid('published_from_draft_id'),
     approvalId: uuid('approval_id'),
+    /** A person's exact approval (`human`) or the owner's delegation to a connection (section 10.4). */
+    publicationAuthorization: text('publication_authorization').notNull().default('human'),
+    /** For a delegated publication, the connection's self-reported client name at the time. */
+    publishedViaClientName: text('published_via_client_name'),
     publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' })
       .notNull()
       .default(now),
   },
   (table) => [
+    check('project_versions_publication_authorization_check', sql`${table.publicationAuthorization} in ('human', 'delegated')`),
     unique('project_versions_project_number_uq').on(table.projectId, table.versionNumber),
     unique('project_versions_project_digest_uq').on(table.projectId, table.contentDigest),
     // Lets `projects.current_version_id` carry a composite FK that proves the
@@ -448,6 +453,8 @@ export const drafts = pgTable(
     importDescriptor: jsonb('import_descriptor'),
     importError: jsonb('import_error'),
     operationId: uuid('operation_id'),
+    /** The OAuth client of the connection that created this draft, if one did (section 10.4). */
+    createdByClientId: text('created_by_client_id'),
     publishedVersionId: uuid('published_version_id').references(() => projectVersions.id, {
       onDelete: 'set null',
     }),
@@ -542,6 +549,10 @@ export const publicationApprovals = pgTable(
     approverCredentialId: uuid('approver_credential_id').references(() => approverCredentials.id, {
       onDelete: 'set null',
     }),
+    /** `human` for a person's decision; `delegated` when a connection published under the owner's delegation. */
+    authorizationKind: text('authorization_kind').notNull().default('human'),
+    /** The connection's OAuth client, for a delegated approval. */
+    clientId: text('client_id'),
     expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
     consumedAt: timestamp('consumed_at', { withTimezone: true, mode: 'date' }),
     consumedByOperationId: uuid('consumed_by_operation_id'),
@@ -560,6 +571,36 @@ export const publicationApprovals = pgTable(
       .on(table.draftId)
       .where(sql`${table.consumedAt} is null and ${table.revokedAt} is null`),
     check('publication_approvals_decision_check', sql`${table.decision} in ('approved', 'denied')`),
+    check(
+      'publication_approvals_authorization_check',
+      sql`(${table.authorizationKind} = 'human' and ${table.clientId} is null) or (${table.authorizationKind} = 'delegated' and ${table.clientId} is not null)`,
+    ),
+  ],
+);
+
+/**
+ * A person's standing permission for one connection to publish their own
+ * drafts without a per-artifact approval (section 10.4). Only a browser
+ * session creates or removes it; revoking the connection deletes its consent
+ * row and with it this delegation.
+ */
+export const publicationDelegations = pgTable(
+  'publication_delegations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => userTable.id, { onDelete: 'cascade' }),
+    consentId: text('consent_id')
+      .notNull()
+      .references(() => oauthConsentTable.id, { onDelete: 'cascade' }),
+    clientId: text('client_id').notNull(),
+    enabledBySessionId: text('enabled_by_session_id').notNull(),
+    createdAt,
+  },
+  (table) => [
+    unique('publication_delegations_consent_uq').on(table.consentId),
+    index('publication_delegations_user_client_idx').on(table.userId, table.clientId),
   ],
 );
 

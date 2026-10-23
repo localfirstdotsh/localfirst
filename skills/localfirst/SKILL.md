@@ -21,10 +21,11 @@ The registry URL is deployment-specific. Take it from the user's MCP configurati
 These are enforced by the server and the CLI. Do not try to work around them, and tell the user
 plainly when one blocks the task.
 
-1. **A person approves publication.** You may prepare, edit, validate and publish a draft, but the
-   approval of the exact revision and digest happens in the user's browser, or in their own terminal
-   through `localfirstdotsh contribution approve`. You cannot grant it, and there is no `--yes`.
-   Any edit after approval revokes it.
+1. **A person authorizes publication.** You may prepare, edit, validate and publish a draft. Either
+   the user approves the exact revision and digest in their browser (or in their own terminal
+   through `localfirstdotsh contribution approve`), or they have turned on "Publish without asking"
+   for this connection, which `draft_get` reports as `publication_delegated: true`. You cannot grant
+   either, and there is no `--yes`. Any edit after approval revokes it.
 2. **Nothing executes on the registry.** There is no hosted run, runtime-discovery or code tool.
    Tests run only through the local CLI, after the user approves the exact plan.
 3. **Read access is not execution access.** A read scope never lets you run a model, change a

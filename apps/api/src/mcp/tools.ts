@@ -56,6 +56,7 @@ import {
   serializeDraft,
 } from '../services/drafts.js';
 import { publishProjectDraft } from '../services/publication.js';
+import { isDelegated } from '../services/delegation.js';
 import {
   PUBLISH_SCOPE,
   WRITE_SCOPE,
@@ -513,7 +514,7 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
     {
       title: 'Get your draft',
       description:
-        'Read one of your own drafts with its validation issues, warning codes, approval state, and the human review URL.',
+        'Read one of your own drafts with its validation issues, warning codes, approval state, the human review URL, and whether this connection may publish without a per-artifact approval (`publication_delegated`).',
       inputSchema: z.object({ draft_id: z.string().min(1).max(64) }),
       annotations: { readOnlyHint: true, openWorldHint: false },
       scopeChallenge: requireAnyScope('projects:draft', 'builds:write', 'tests:submit', 'community:write'),
@@ -526,9 +527,12 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
         const scoped = requireKindScope(actor, draft.kind, 'write');
         if (scoped) return scoped;
         const approval = await activeApproval(draft.id);
-        const serialized = serializeDraft(draft, approval);
+        const delegated = await isDelegated(actor);
+        const serialized = { ...serializeDraft(draft, approval), publication_delegated: delegated };
         return ok(
-          `Draft ${draft.id} is ${draft.state} at revision ${draft.revision}.`,
+          `Draft ${draft.id} is ${draft.state} at revision ${draft.revision}. ${delegated
+            ? 'Its owner lets this connection publish without a per-artifact approval.'
+            : 'Publishing needs the owner to approve it at the review URL.'}`,
           serialized as unknown as Record<string, unknown>,
         );
       });
@@ -665,10 +669,11 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
     {
       title: 'Publish an approved contribution',
       description:
-        'Publish the exact artifact a person approved in a browser session. The approval ID, draft revision, and payload digest must match the current draft, and the approval is consumed once. A published build or test result is public but pending review: publication never verifies anything.',
+        'Publish the exact artifact a person approved in a browser session, passing that `approval_id`. If the owner lets this connection publish without asking (`publication_delegated` from draft_get), omit `approval_id` and list `acknowledged_warning_codes` for every warning on the draft instead; the owner sees what you published and can unpublish it. The draft revision and payload digest must match the current draft either way. A published build or test result is public but pending review: publication never verifies anything.',
       inputSchema: z.object({
         draft_id: z.string().min(1).max(64),
-        approval_id: z.string().min(1).max(64),
+        approval_id: z.string().min(1).max(64).optional(),
+        acknowledged_warning_codes: z.array(z.string().max(64)).max(50).optional(),
         draft_revision: z.int().positive(),
         payload_digest: z.string().regex(/^sha256:[0-9a-f]{64}$/),
         idempotency_key: idempotencyKey,
@@ -692,9 +697,10 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
               const result = await publishRecordDraft({
                 actor,
                 draftId: args.draft_id,
-                approvalId: args.approval_id,
+                approvalId: args.approval_id ?? null,
                 draftRevision: args.draft_revision,
                 payloadDigest: args.payload_digest,
+                acknowledgedWarningCodes: args.acknowledged_warning_codes ?? [],
               });
               return { status: 201, body: result as unknown as Record<string, unknown> };
             },
@@ -716,9 +722,10 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
             const result = await publishProjectDraft({
               actor,
               draftId: args.draft_id,
-              approvalId: args.approval_id,
+              approvalId: args.approval_id ?? null,
               draftRevision: args.draft_revision,
               payloadDigest: args.payload_digest,
+              acknowledgedWarningCodes: args.acknowledged_warning_codes ?? [],
             });
             return { status: 201, body: result as unknown as Record<string, unknown> };
           },
