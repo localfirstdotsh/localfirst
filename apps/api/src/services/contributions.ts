@@ -32,6 +32,7 @@ import {
 import { communityRecords } from '../db/schema/community.js';
 import { evaluateCommunityDraft, isCommunityKind } from './community.js';
 import { lockActiveAccount } from './accounts.js';
+import { creatingClient, recordDelegatedApproval } from './delegation.js';
 import { writeAudit } from './audit.js';
 import { emitEvent } from './outbox.js';
 import { asBuild, asReport, manualReportOf } from './builds.js';
@@ -248,6 +249,7 @@ export async function createRecordDraft(input: CreateRecordDraftInput) {
         issues: validation.issues,
         warningCodes: validation.warning_codes,
         state: validation.readyForReview ? 'ready_for_review' : 'editable',
+        createdByClientId: creatingClient(actor),
       })
       .returning();
     if (!row) throw ApiError.internal('The draft could not be created.');
@@ -436,9 +438,12 @@ export async function revalidateRecordDraft(input: {
 export interface PublishRecordInput {
   actor: Actor;
   draftId: string;
-  approvalId: string;
+  /** A person's approval, or null when a delegated connection publishes without one (section 10.4). */
+  approvalId: string | null;
   draftRevision: number;
   payloadDigest: string;
+  /** Required instead of an approval: the delegated connection acknowledges each warning itself. */
+  acknowledgedWarningCodes?: string[];
 }
 
 export interface PublishRecordResult {
@@ -451,6 +456,7 @@ export interface PublishRecordResult {
   published_at: string;
   url: string;
   warning_codes: string[];
+  publication_authorization: 'human' | 'delegated';
 }
 
 /**
@@ -474,18 +480,14 @@ export async function publishRecordDraft(input: PublishRecordInput): Promise<Pub
         message: 'This draft was already published.',
       });
     }
-    if (draft.state !== 'approved') {
+    const delegated = input.approvalId === null;
+    if (!delegated && draft.state !== 'approved') {
       throw new ApiError({
         code: ERROR_CODES.APPROVAL_REQUIRED,
         message: 'This draft has no live human approval of its exact current artifact.',
         details: { state: draft.state },
       });
     }
-    const [approval] = await tx
-      .select()
-      .from(publicationApprovals)
-      .where(eq(publicationApprovals.id, input.approvalId))
-      .for('update');
 
     const payload = draft.payload as RecordDraftPayload;
     const validation = await evaluateRecordDraft({
@@ -504,6 +506,19 @@ export async function publishRecordDraft(input: PublishRecordInput): Promise<Pub
       });
     }
 
+    const approvalId = input.approvalId ?? await recordDelegatedApproval(tx, {
+      actor,
+      draft,
+      warningCodes: validation.warning_codes,
+      acknowledgedWarningCodes: input.acknowledgedWarningCodes ?? [],
+      draftRevision: input.draftRevision,
+      payloadDigest: input.payloadDigest,
+    });
+    const [approval] = await tx
+      .select()
+      .from(publicationApprovals)
+      .where(eq(publicationApprovals.id, approvalId))
+      .for('update');
     assertApprovalUsable(
       approval,
       {
@@ -513,7 +528,7 @@ export async function publishRecordDraft(input: PublishRecordInput): Promise<Pub
         payloadDigest: draft.payloadDigest,
         warningCodes: validation.warning_codes,
       },
-      { approvalId: input.approvalId, draftRevision: input.draftRevision, payloadDigest: input.payloadDigest },
+      { approvalId, draftRevision: input.draftRevision, payloadDigest: input.payloadDigest },
       userId,
     );
     // The approved bytes must still be exactly what would be published now.
@@ -584,7 +599,7 @@ export async function publishRecordDraft(input: PublishRecordInput): Promise<Pub
     const consumed = await tx
       .update(publicationApprovals)
       .set({ consumedAt: publishedAt })
-      .where(and(eq(publicationApprovals.id, input.approvalId), isNull(publicationApprovals.consumedAt)))
+      .where(and(eq(publicationApprovals.id, approvalId), isNull(publicationApprovals.consumedAt)))
       .returning({ id: publicationApprovals.id });
     if (consumed.length === 0) {
       throw new ApiError({ code: ERROR_CODES.APPROVAL_REQUIRED, message: 'This approval was already used.' });
@@ -608,7 +623,8 @@ export async function publishRecordDraft(input: PublishRecordInput): Promise<Pub
       metadata: {
         project_id: projectId,
         draft_id: draft.id,
-        approval_id: input.approvalId,
+        approval_id: approvalId,
+        authorization: delegated ? 'delegated' : 'human',
         projection_digest: validation.payloadDigest,
       },
     });
@@ -623,6 +639,7 @@ export async function publishRecordDraft(input: PublishRecordInput): Promise<Pub
       published_at: publishedAt.toISOString(),
       url: `/api/v1/${draft.kind === 'collection' ? 'collections' : draft.kind === 'troubleshooting' ? 'troubleshooting-notes' : draft.kind === 'build' ? 'builds' : 'test-results'}/${payload.record_id}`,
       warning_codes: validation.warning_codes,
+      publication_authorization: delegated ? 'delegated' : 'human',
     };
   });
 }

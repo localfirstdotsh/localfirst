@@ -64,6 +64,13 @@
       "when": 1792056373617,
       "tag": "0008_usage_counters",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792744471540,
+      "tag": "0009_delegated_publishing",
+      "breakpoints": true
     }
   ]
 }

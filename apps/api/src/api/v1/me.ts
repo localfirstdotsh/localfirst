@@ -24,6 +24,7 @@ import { requestAccountDeletion } from '../../services/accounts.js';
 import { advertisedScopes, PRODUCT_SCOPES } from '../../auth/scopes.js';
 import { config } from '../../config.js';
 import { listConnections } from '../../services/connections.js';
+import { disableDelegation, enableDelegation } from '../../services/delegation.js';
 
 export const meRoutes = new Hono<AppEnv>();
 
@@ -88,7 +89,7 @@ meRoutes.get('/connections', requireHuman(), async (c) => {
       },
       c.get('requestId'),
       {
-        note: 'A connection grants recurring capabilities. It never approves a future artifact or local test.',
+        note: 'A connection grants recurring capabilities. By itself it never approves a future artifact or local test; publication delegation is a separate setting.',
       },
     ),
   );
@@ -125,6 +126,17 @@ meRoutes.delete('/connections/:connection_id', requireHuman(), async (c) => {
       metadata: { connection_id: connectionId },
     });
   });
+  return c.body(null, 204);
+});
+
+// Publication delegation (section 10.4): only a browser session changes it.
+meRoutes.put('/connections/:connection_id/publication-delegation', requireHuman(), async (c) => {
+  await enableDelegation(c.get('actor'), c.req.param('connection_id'));
+  return c.body(null, 204);
+});
+
+meRoutes.delete('/connections/:connection_id/publication-delegation', requireHuman(), async (c) => {
+  await disableDelegation(c.get('actor'), c.req.param('connection_id'));
   return c.body(null, 204);
 });
 

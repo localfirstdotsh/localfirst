@@ -14,13 +14,17 @@ be quoted strings.
    The result carries the draft ID, revision and a review URL.
 4. **Validate.** `draft_validate` with the current `expected_revision`. Fix every issue with
    `draft_update`, which returns a new revision and digest. Validation only inspects; nothing runs.
-5. **Hand over for approval.** Give the user the review URL, or tell them to run
+5. **Hand over for approval, unless delegated.** `draft_get` returns `publication_delegated`. If it
+   is true, the user lets this connection publish without asking: go to step 6. Otherwise give the
+   user the review URL, or tell them to run
    `localfirstdotsh contribution review <draft-id>` and `contribution approve <draft-id>` in their
    own terminal. Wait. Do not poll for approval in a loop and do not ask the user to approve on your
    behalf.
 6. **Publish.** `contribution_publish` with the draft ID, approval ID, revision, digest and a new
    idempotency key. Approval is single use and short lived; if it has expired or the revision
-   changed, return to step 5.
+   changed, return to step 5. Under delegation, omit the approval ID and pass
+   `acknowledged_warning_codes` with every warning on the draft, then tell the user what you
+   published, which warnings you accepted, and that they can unpublish it.
 
 ## Rules
 
@@ -29,5 +33,7 @@ be quoted strings.
 - Do not claim a test result in the spec's `evidence` field. Evidence comes from submitted,
   operator-reviewed reports.
 - Every limitation the validator warns about needs the user's explicit acknowledgement at approval.
+  Under delegation you acknowledge them yourself, so only do so for limitations the user would
+  accept, and report each one.
 - Scopes: drafts need `projects:draft`, publishing `projects:publish`, updates `projects:update`.
   Request the minimum for the operation.

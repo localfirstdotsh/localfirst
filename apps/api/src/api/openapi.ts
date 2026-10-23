@@ -599,7 +599,7 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
           tags: ['contribution'],
           summary: 'Record a human approval of the exact artifact',
           description:
-            'A browser session, or an approval device the person linked from their own machine. An agent token cannot create an approval, and the approval is single use with a short expiry.',
+            'A browser session, or an approval device the person linked from their own machine. An agent token cannot create an approval, and the approval is single use with a short expiry. With `delegate_connection: true` (browser session only), the same request also lets the connection that created the draft publish without asking.',
           security: [{ session: [] }, { approverDevice: [] }],
           parameters: [{ name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } }],
           requestBody: { required: true, content: { 'application/json': { schema: { type: 'object' } } } },
@@ -617,6 +617,8 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
         post: {
           tags: ['contribution'],
           summary: 'Publish the approved artifact as an immutable version',
+          description:
+            'Send `approval_id` for a human approval. A connection its owner delegated publication to may omit it and send `acknowledged_warning_codes` for every warning instead. `draft_revision` and `payload_digest` must match the current draft either way.',
           security: [{ localfirstOAuth: ['projects:publish'] }, { session: [] }],
           parameters: [
             { name: 'draft_id', in: 'path', required: true, schema: { type: 'string' } },
@@ -695,10 +697,26 @@ export function openApiDocument(config: AppConfig): Record<string, unknown> {
       '/api/v1/me/connections/{connection_id}': {
         delete: {
           tags: ['account'],
-          summary: 'Revoke an agent grant',
+          summary: 'Revoke an agent grant (also ends its publication delegation)',
           security: [{ session: [] }],
           parameters: [{ name: 'connection_id', in: 'path', required: true, schema: { type: 'string' } }],
           responses: { '204': { description: 'Revoked' }, ...standardErrors },
+        },
+      },
+      '/api/v1/me/connections/{connection_id}/publication-delegation': {
+        put: {
+          tags: ['account'],
+          summary: 'Let this connection publish your drafts without per-artifact approval',
+          security: [{ session: [] }],
+          parameters: [{ name: 'connection_id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: { '204': { description: 'Delegated' }, ...standardErrors },
+        },
+        delete: {
+          tags: ['account'],
+          summary: 'Require your approval again for this connection; published artifacts are unchanged',
+          security: [{ session: [] }],
+          parameters: [{ name: 'connection_id', in: 'path', required: true, schema: { type: 'string' } }],
+          responses: { '204': { description: 'Delegation ended' }, ...standardErrors },
         },
       },
       '/api/v1/me/deletion-requests': {

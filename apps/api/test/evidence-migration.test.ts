@@ -163,14 +163,12 @@ describe('upgrade from the previous release', () => {
             visibility: 'unpublished', listingOrigin: 'creator_submitted',
           })
           .returning();
-        const [version] = await old
-          .insert(schema.projectVersions)
-          .values({
-            projectId: project!.id, versionNumber: 1, specVersion: '0.1.0', schemaId: 'localfirst/project/v0.2',
-            manifest: validated.manifest, markdown: validated.markdown, contentDigest: validated.content_digest!,
-            payloadDigest: validated.payload_digest, derived: validated.derived, publishedByUserId: 'user-upgrade',
-          })
-          .returning();
+        // Raw SQL with the historical column set: project_versions and drafts have gained columns since release N-1.
+        const { rows: [version] } = await pool.query<{ id: string }>(
+          `insert into project_versions (project_id, version_number, spec_version, schema_id, manifest, markdown, content_digest, payload_digest, derived, published_by_user_id)
+           values ($1, 1, '0.1.0', 'localfirst/project/v0.2', $2, $3, $4, $5, $6, 'user-upgrade') returning id`,
+          [project!.id, JSON.stringify(validated.manifest), validated.markdown, validated.content_digest, validated.payload_digest, JSON.stringify(validated.derived)],
+        );
         await old.update(schema.projects).set({ currentVersionId: version!.id, visibility: 'published' }).where(sql`id = ${project!.id}`);
         // The version predates test definitions: only the P0 declaration rows exist.
         await old.insert(schema.projectVersionFiles).values({
@@ -183,10 +181,10 @@ describe('upgrade from the previous release', () => {
           (project_version_id,key,schema_id,path,harness,scope,configuration_key,model_role,required_capabilities,manifest_digest,fixture_digest,runner_available)
           values ($1,'request-label-v1','localfirst/test/v0.1',$2,'declarative_task_v1','component','local-chat','classifier',$3,$4,$5,false)`,
           [version!.id, EXAMPLE_TEST_PATH, JSON.stringify(['chat','json_output']), digestOf('m'), digestOf('f')]);
-        const [draft] = await old
-          .insert(schema.drafts)
-          .values({ kind: 'project', ownerUserId: 'user-upgrade', payload: {}, payloadDigest: digestOf('draft') })
-          .returning();
+        const { rows: [draft] } = await pool.query<{ id: string }>(
+          `insert into drafts (kind, owner_user_id, payload, payload_digest) values ('project', 'user-upgrade', '{}'::jsonb, $1) returning id`,
+          [digestOf('draft')],
+        );
         // Raw SQL: this table has gained columns since release N-1, so the current Drizzle insert would name them.
         await pool.query(
           `insert into publication_approvals (draft_id, kind, actor_user_id, draft_revision, payload_digest, acknowledged_warning_codes, policy_version, expires_at)
@@ -275,7 +273,12 @@ describe('P1 to P2 projection upgrade', () => {
         const now = new Date();
         await conn.insert(schema.userTable).values({ id: 'p1-contributor', name: 'P1 Contributor', email: 'p1@test.invalid', emailVerified: false, createdAt: now, updatedAt: now });
         const [project] = await conn.insert(schema.projects).values({ slug: 'p1-project', projectKey: 'request-labeler', managerUserId: 'p1-contributor', type: 'experiment', visibility: 'unpublished', listingOrigin: 'creator_submitted' }).returning();
-        const [version] = await conn.insert(schema.projectVersions).values({ projectId: project!.id, versionNumber: 1, specVersion: '0.1.0', schemaId: 'localfirst/project/v0.2', manifest: validated.manifest, markdown: validated.markdown, contentDigest: validated.content_digest!, payloadDigest: validated.payload_digest, derived: validated.derived, publishedByUserId: 'p1-contributor' }).returning();
+        // Raw SQL with the historical column set: project_versions has gained columns since P1.
+        const { rows: [version] } = await pool.query<{ id: string }>(
+          `insert into project_versions (project_id, version_number, spec_version, schema_id, manifest, markdown, content_digest, payload_digest, derived, published_by_user_id)
+           values ($1, 1, '0.1.0', 'localfirst/project/v0.2', $2, $3, $4, $5, $6, 'p1-contributor') returning id`,
+          [project!.id, JSON.stringify(validated.manifest), validated.markdown, validated.content_digest, validated.payload_digest, JSON.stringify(validated.derived)],
+        );
         await conn.update(schema.projects).set({ currentVersionId: version!.id, visibility: 'published' }).where(sql`id = ${project!.id}`);
         await conn.insert(schema.compatibilitySummaries).values({ projectId: project!.id, projectVersionId: version!.id, configurationKey: 'local-chat', subjectFingerprint: digestOf('legacy-private-subject'), subject: { platform: { unapproved_hardware: 'private' } }, testDefinitionId: null, scope: 'manual', evidenceLevel: 'community_reported', counts: { reports: 1, successes: 1, failures: 0, partial: 0 }, distinctContributors: 1, conflict: false, evidenceIds: [], latestReportAt: now });
         await runMigrations(url);

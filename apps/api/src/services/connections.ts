@@ -3,6 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import { ApiError } from '../http/errors.js';
 import { db } from '../db/client.js';
 import { oauthClientTable, oauthConsentTable } from '../db/schema/auth.js';
+import { delegationSummary } from './delegation.js';
 
 export async function listConnections(userId: string) {
   const rows = await db()
@@ -22,6 +23,7 @@ export async function listConnections(userId: string) {
     .where(eq(oauthConsentTable.userId, userId))
     .orderBy(desc(oauthConsentTable.createdAt))
     .limit(100);
+  const delegation = await delegationSummary(userId);
   return rows.map((row) => {
     if (
       !Array.isArray(row.scopes) ||
@@ -34,6 +36,9 @@ export async function listConnections(userId: string) {
       client_name: row.client_name ?? null,
       client_name_is_unverified: true,
       granted: true,
+      /** The owner lets this connection publish without per-artifact approval (section 10.4). */
+      publication_delegated: delegation.delegatedConsents.has(row.connection_id),
+      delegated_publications: delegation.publicationsByClient.get(row.client_id) ?? [],
       created_at: row.created_at?.toISOString() ?? null,
       updated_at: row.updated_at?.toISOString() ?? null,
     };
