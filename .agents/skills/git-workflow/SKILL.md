@@ -211,6 +211,11 @@ gh api -X PUT repos/localfirstdotsh/localfirst/rulesets/<id> --input .agents/ski
 Deployment is a separate, later step: no deployment environments or deploy jobs exist in this repo,
 so CI runs checks only. Do not describe any merge as deploying anything.
 
+**npm releases.** `.github/workflows/release.yml` publishes the `localfirstdotsh` package when a
+`localfirstdotsh-v<version>` tag is pushed (betas from `staging`, stable from `main`, behind the
+`npm` environment). Pushing such a tag publishes to npm: create or push one only on the user's
+explicit instruction. The process is in `docs/operations/RUNBOOK.md` ("npm package release").
+
 ## GitHub protection (current status)
 
 `localfirstdotsh/localfirst` is a public repo with the ruleset **`permanent-branches` active** on `main`,

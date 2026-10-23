@@ -11,6 +11,8 @@ name: CI
 
 on:
   workflow_dispatch:
+  # The npm release workflow (release.yml) runs this same gate on the tagged commit.
+  workflow_call:
   pull_request:
     branches: [main, staging, dev]
   push:

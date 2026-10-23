@@ -26,6 +26,7 @@
     "verify:cli-examples": "pnpm build && pnpm --filter @localfirst/api verify:cli-examples"
   },
   "devDependencies": {
+    "@localfirst/contracts": "workspace:*",
     "@neon/config": "^1.8.6",
     "@neon/env": "^1.5.3",
     "typescript": "5.9.3"
