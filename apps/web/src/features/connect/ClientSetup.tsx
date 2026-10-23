@@ -22,7 +22,7 @@ function CliSetup({ client, endpoint, setup }: { client: SetupClient['id']; endp
     {source && <details className="docs-prerequisites">
       <summary>First time? Build the Localfirst CLI</summary>
       <div className="stack gap-8">
-        <p>The npm package is not released yet. From a checkout of the <a href="https://github.com/localfirstdotsh/localfirst">Localfirst repository</a>, run:</p>
+        <p>This registry runs the CLI from source. From a checkout of the <a href="https://github.com/localfirstdotsh/localfirst">Localfirst repository</a>, run:</p>
         <CommandBlock clients={[]} command="pnpm install --frozen-lockfile && pnpm build:contracts && pnpm --filter localfirstdotsh build" note="Build once, then run the connection command below from the same repository root." />
       </div>
     </details>}
