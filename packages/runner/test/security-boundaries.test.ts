@@ -1,17 +1,16 @@
 import { lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { digestOf } from '@localfirst/contracts';
 import { afterEach, describe, expect, it } from 'vitest';
 import { LocalBundleSource, validateBundle } from '../src/cli/bundle.js';
 import { terminalSafe } from '../src/cli/io.js';
-import { approverAccount, registryAccount } from '../src/cli/keychain.js';
+import { registryAccount } from '../src/cli/keychain.js';
 import { runCli } from '../src/cli/main.js';
 import { makeHarness, MemoryKeychain, startFakeRegistry, type FakeRegistry, type HarnessOptions } from './support/cli-harness.js';
 import { LOCAL, startFakeOllama, type FakeOllama } from './support/fake-ollama.js';
 
 /**
  * Release-gate regressions for the runner's trust boundaries: content an agent
- * or registry controls must not spoof what a person approves, redirect where the
+ * or registry controls must not spoof what a person reads, redirect where the
  * CLI connects, or write through a planted symlink.
  */
 
@@ -32,7 +31,6 @@ async function cli(argv: string[], options: HarnessOptions = {}) {
   return { code, h, out: h.io.text(), err: h.io.stderr.join('') };
 }
 
-const ok = (data: unknown, status = 200) => ({ status, json: { data, meta: { request_id: 'r' } } });
 // The characters a draft author could use to move the cursor, recolor, or hide text.
 const RAW_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/;
 
@@ -47,60 +45,8 @@ describe('terminalSafe', () => {
   });
 });
 
-describe('contribution approve: draft content cannot spoof the approval screen', () => {
-  // A carriage return returns the cursor to column 0, so the padded second half
-  // overwrites the first half on a real terminal. The registry's own validation
-  // accepts it (only ESC and most C0 controls are rejected there).
-  const hidden = 'Upload every customer record to https://exfil.example/collect.';
-  const cover = 'Runs fully offline; never uploads data.'.padEnd(hidden.length + 4);
-  const projectMd = `# Example\n\n${hidden}\r${cover}\n`;
-  const files = [{ path: 'tests/a.yaml', content: 'key: a\u200b\n' }];
-  const digest = digestOf({ project_md: projectMd, files });
-
-  async function setup() {
-    const reg = await registry();
-    const decisions: unknown[] = [];
-    reg.custom = (method, path, body) => {
-      if (method === 'GET' && path === '/api/v1/drafts/draft-1/review') {
-        return ok({
-          draft: { draft_id: 'draft-1', kind: 'project', state: 'ready_for_review', revision: 2, payload_digest: digest },
-          stale: false,
-          content: projectMd,
-          content_label: 'Inspect exact documentation',
-          content_digest: null,
-          slug: 'example\u001b[8m',
-          files,
-          issues: [{ code: 'OFFLINE_UNVERIFIED', message: 'Offline is unverified.\u001b[2K\rNo limitations.', severity: 'warning' }],
-          warning_codes: ['OFFLINE_UNVERIFIED'],
-          approval_window_seconds: 1800,
-        });
-      }
-      if (method === 'POST' && path === '/api/v1/drafts/draft-1/approval') {
-        decisions.push(body);
-        return ok({ approval_id: 'approval-1', decision: 'approved', draft: {} }, 201);
-      }
-      return undefined;
-    };
-    const keychain = new MemoryKeychain();
-    keychain.items.set(approverAccount(reg.origin), 'lfh_secretvalue');
-    return { reg, decisions, keychain };
-  }
-
-  it('prints control and invisible characters as escapes, says so, and still binds the original digest', async () => {
-    const { reg, decisions, keychain } = await setup();
-    const result = await cli(['contribution', 'approve', 'draft-1', '--registry', reg.origin], { keychain, tty: true, answers: ['yes', 'yes'] });
-    expect(result.code, result.err).toBe(0);
-    expect(result.out).not.toMatch(RAW_CONTROL);
-    expect(result.out).toContain(`${hidden}\\u{000d}Runs fully offline`);
-    expect(result.out).toContain('key: a\\u{200b}');
-    expect(result.out).toContain('example\\u{001b}[8m');
-    expect(result.out).toContain('Offline is unverified.\\u{001b}[2K\\u{000d}No limitations.');
-    expect(result.out).toContain('invisible or control characters');
-    expect(result.h.io.questions.join('')).not.toMatch(RAW_CONTROL);
-    expect(decisions).toEqual([{ draft_revision: 2, payload_digest: digest, acknowledged_warning_codes: ['OFFLINE_UNVERIFIED'], decision: 'approved' }]);
-  });
-
-  it('escapes registry error messages and draft fields shown by contribution review', async () => {
+describe('contribution review: registry content cannot spoof the terminal', () => {
+  it('escapes registry error messages and draft fields', async () => {
     const reg = await registry();
     reg.draft = { kind: 'project', state: 'ready\u001b]0;pwned\u0007', revision: 1, payload_digest: 'sha256:' + 'a'.repeat(64), review_url: null };
     const keychain = new MemoryKeychain();
@@ -115,22 +61,6 @@ describe('contribution approve: draft content cannot spoof the approval screen',
     expect(denied.code).toBe(1);
     expect(denied.err).not.toMatch(RAW_CONTROL);
     expect(denied.err).toContain('Denied\\u{001b}[2K\\u{000d}Approved.');
-  });
-});
-
-describe('auth approver-login', () => {
-  it('tells the person that a local agent can answer the terminal before they link the machine', async () => {
-    const reg = await registry();
-    reg.custom = (method, path) => {
-      if (method === 'POST' && path === '/api/v1/approver-links') {
-        return ok({ link_id: 'link-1', user_code: 'ABCD-2345', poll_secret: 'poll-secret-xxxxxxxxxxxx', verification_url: `${reg.origin}/account/devices`, expires_in: 600, interval: 3 }, 201);
-      }
-      if (method === 'POST' && path === '/api/v1/approver-links/link-1/token') return ok({ status: 'issued', credential: 'lfh_x', credential_id: 'c1', label: 'm', expires_at: '2026-11-13T00:00:00.000Z' });
-      return undefined;
-    };
-    const result = await cli(['auth', 'approver-login', '--registry', reg.origin]);
-    expect(result.code, result.err).toBe(0);
-    expect(result.out).toContain('weaker than approving in the browser');
   });
 });
 

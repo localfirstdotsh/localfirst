@@ -238,4 +238,20 @@ describe('publication delegation', () => {
     expect((await request(`/api/v1/builds/${buildId}/withdraw`, { method: 'POST', user: contributor.userId })).status).toBe(200);
     expect((await recordRow()).record_visibility).toBe('withdrawn');
   });
+
+  it('has no local approval channel: the device routes are gone and an approval credential is not a credential', async () => {
+    const owner = await createAccount();
+    const { clientId } = await connect(owner);
+    const draft = await agentDraft(owner, clientId, 'no-approval-device');
+    expect((await request('/api/v1/approver-links', { method: 'POST', body: { client_label: 'laptop' } })).status).toBe(404);
+    expect((await request('/api/v1/me/approver-devices', { user: owner.userId })).status).toBe(404);
+    const decision = { draft_revision: draft.revision, payload_digest: draft.payload_digest, acknowledged_warning_codes: draft.warning_codes, decision: 'approved' };
+    for (const path of [`/api/v1/drafts/${draft.draft_id}/review`, `/api/v1/drafts/${draft.draft_id}/approval`]) {
+      const method = path.endsWith('/approval') ? 'POST' : 'GET';
+      const body = method === 'POST' ? decision : undefined;
+      expect((await request(path, { method, body, headers: { authorization: 'Bearer lfh_retiredcredential' } })).status).toBe(401);
+      expect((await request(path, { method, body, ...asAgent(owner, clientId) })).status).toBe(403);
+    }
+    expect(await db().select().from(publicationApprovals).where(eq(publicationApprovals.draftId, draft.draft_id))).toEqual([]);
+  });
 });

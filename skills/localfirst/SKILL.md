@@ -22,9 +22,8 @@ These are enforced by the server and the CLI. Do not try to work around them, an
 plainly when one blocks the task.
 
 1. **A person authorizes publication.** You may prepare, edit, validate and publish a draft. Either
-   the user approves the exact revision and digest in their browser (or in their own terminal
-   through `localfirstdotsh contribution approve`), or they have turned on "Publish without asking"
-   for this connection, which `draft_get` reports as `publication_delegated: true`. You cannot grant
+   the user approves the exact revision and digest in their browser, or they have turned on
+   "Publish without asking" for this connection, which `draft_get` reports as `publication_delegated: true`. You cannot grant
    either, and there is no `--yes`. Any edit after approval revokes it.
 2. **Nothing executes on the registry.** There is no hosted run, runtime-discovery or code tool.
    Tests run only through the local CLI, after the user approves the exact plan.

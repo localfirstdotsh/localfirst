@@ -6,6 +6,7 @@
 | Audited code | `origin/dev` at `155f1c7`, plus the release branch `origin/chore/npm-beta-release` at `c1f0a23` (reviewed read-only) |
 | Fixes | Branch `fix/npm-release-security-audit` (from `origin/dev`), uncommitted at the time of writing |
 | Date | 2026-10-23 |
+| Later change | The approval device was retired after this audit (`refactor/retire-approval-device`, BACKEND_PRD ADR-014): `auth approver-login` and `contribution approve` no longer exist. That resolves R-1, and LF-01's fix now protects `contribution review` output and registry errors only. |
 | Method | Source review of every runner module and the contracts it vendors, tarball inspection, adversarial regression tests, a clean-consumer install, dependency audit, git-history credential scan, and a read-only review of GitHub and npm settings |
 
 ## 1. Executive summary
@@ -25,7 +26,7 @@ No critical findings came up, and no command injection, path traversal, or secre
 
 1. **The release pipeline is not yet protected (LF-04, High, open).** Nothing in the one-time setup is applied: the `npm` GitHub environment and its required reviewer, the tag ruleset, the trusted publisher, and the token lockdown. Once it is applied, the only control that stops a tag on an unreviewed branch from publishing is the environment's required reviewer. The workflow's own "commit must be on staging/main" check does not stop it, because an attacker who can push a tag can edit that check.
 2. **The approval screen could be spoofed through terminal control characters (LF-01, Medium, fixed).** Agent-authored draft text containing `\r`, C1 or zero-width characters passed registry validation and was printed raw by `contribution approve`. A line could then visually overwrite the part of the content the person was approving.
-3. **The approval device is weaker than the browser (R-1, accepted residual risk).** The TTY check is not proof that a person is present: piping `yes` through the stock `script` utility satisfies it (verified). The product requirements already accept this; the CLI now tells the person when they link a machine.
+3. **The approval device was weaker than the browser (R-1, resolved by removal).** The TTY check is not proof that a person is present: piping `yes` through the stock `script` utility satisfies it (verified). The device has since been retired; a person approves in the browser or delegates publication to one connection.
 
 **Release readiness:** the package code passes the gate. The published manifest and release pipeline do not yet: LF-07 is still present on `dev`, and LF-04 is configuration that has not been applied.
 
@@ -220,7 +221,7 @@ Recommended before the first stable `latest` release (not blocking a beta): LF-0
 
 ## 8. Residual risks
 
-- **R-1: The approval device is not proof of a person (accepted, documented).** `requireTty` can be satisfied by a pseudo-terminal (verified with `script`). Any process running as the user can also read the approval credential from the keychain through `security`, or forge a `--remember` approval file. So an agent with shell access on a machine linked with `auth approver-login` can approve its own drafts. `BACKEND_PRD.md` ("Linked approval device") records this and keeps browser approval as the default. The CLI now states it at link time. Possible hardening: on macOS, create the approver keychain item with an empty trusted-application list (`-T ""`), so every read raises a system dialog that only a person can answer; on Linux, document the device as unsuitable wherever agents run.
+- **R-1: The approval device is not proof of a person (resolved: the device was retired after this audit).** `requireTty` can be satisfied by a pseudo-terminal (verified with `script`). Any process running as the user can also read the approval credential from the keychain through `security`, or forge a `--remember` approval file. So an agent with shell access on a machine linked with `auth approver-login` can approve its own drafts. `BACKEND_PRD.md` ("Linked approval device") records this and keeps browser approval as the default. The CLI now states it at link time. Possible hardening: on macOS, create the approver keychain item with an empty trusted-application list (`-T ""`), so every read raises a system dialog that only a person can answer; on Linux, document the device as unsuitable wherever agents run.
 - **R-2: Stored execution approvals (`--remember`)** are unauthenticated files in the user's data directory. Forging one gives a same-user process no more power than it already has: it could call the loopback runtime directly. They are bound to one plan digest. Accepted.
 - **R-3: Pre-existing symlinked directories inside an `--out` directory** are followed by `mkdir -p`. Writes stay exclusive (`wx`), new-file-only, `0600`, and limited to YAML, JSON, text, Markdown and `.mjs` names, and they require the person to choose an attacker-prepared output directory. Low; hardening would mean an `lstat` walk of each parent.
 - **R-4: Project code isolation depends on Docker.** The container profile is strict (see section 2), but a container escape in the local Docker or VM is outside this package's control. Framework execution needs its own approval, and the plan states that it runs project code.
@@ -235,4 +236,4 @@ Recommended before the first stable `latest` release (not blocking a beta): LF-0
 - the release pipeline that would publish it does not yet enforce authorization (LF-04);
 - the publishable manifest on `dev` still names an unclaimed npm package (LF-07).
 
-Once blockers 1 to 3 are done and verified, this becomes **CONDITIONAL GO** for the `beta` dist-tag, conditional on LF-05 and LF-06 before the first stable release and on acceptance of R-1 to R-7.
+Once blockers 1 to 3 are done and verified, this becomes **CONDITIONAL GO** for the `beta` dist-tag, conditional on LF-05 and LF-06 before the first stable release and on acceptance of R-2 to R-7 (R-1 is resolved).

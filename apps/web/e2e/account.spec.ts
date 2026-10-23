@@ -11,7 +11,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const violations: string[] = [];
       page.on('console', (message) => { if (/Content Security Policy|Refused to/i.test(message.text())) violations.push(message.text()); });
       page.on('pageerror', (error) => violations.push(error.message));
-      for (const path of ['/sign-in', '/consent?client_id=example&scope=projects:read%20custom:write%20offline_access', '/account/connections', '/account/devices', '/account/delete', '/privacy']) {
+      for (const path of ['/sign-in', '/consent?client_id=example&scope=projects:read%20custom:write%20offline_access', '/account/connections', '/account/delete', '/privacy']) {
         const response = await page.goto(path);
         expect(response?.status()).toBe(200);
         const csp = response?.headers()['content-security-policy'] ?? '';
@@ -110,18 +110,6 @@ test.describe('browser account mutations and isolation', () => {
     await card.getByRole('button', { name: 'Confirm revocation' }).click();
     await expect(card).toHaveCount(0); await expect(page.getByRole('status').filter({ hasText: 'access revoked' })).toBeVisible();
     expect((await fixtureQuery('select id from oauth_consent where id = $1', [id])).rows).toHaveLength(0);
-  });
-  test('links and revokes an approval device through the real endpoints', async ({ page, request }) => {
-    const started = await request.post('/api/v1/approver-links', { data: { client_label: 'Browser test terminal' } });
-    expect(started.ok()).toBe(true); const link = (await started.json()).data;
-    await page.goto(`/account/devices?code=${encodeURIComponent(link.user_code)}`);
-    await page.getByRole('button', { name: 'Approve this machine', exact: true }).click();
-    await expect(page.getByRole('status').filter({ hasText: 'Return to your terminal' })).toBeVisible();
-    const issued = await request.post(`/api/v1/approver-links/${link.link_id}/token`, { data: { poll_secret: link.poll_secret } });
-    expect(issued.ok()).toBe(true);
-    await page.goto('/account/devices'); const card = page.getByRole('listitem').filter({ hasText: 'Browser test terminal' });
-    await card.getByRole('button', { name: 'Revoke Browser test terminal' }).click(); await card.getByRole('button', { name: 'Confirm revocation' }).click();
-    await expect(card).toHaveCount(0);
   });
   test('protects private read models, never caches them, and keeps public machine URLs working', async ({ request }) => {
     const draft = await createDraft(request);

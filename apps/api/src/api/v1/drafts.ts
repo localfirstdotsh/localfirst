@@ -13,7 +13,7 @@ import type { AppEnv } from '../../http/context.js';
 import { ApiError } from '../../http/errors.js';
 import { parseIfMatchRevision, revisionEtag } from '../../http/envelope.js';
 import { success } from '../../http/middleware.js';
-import { requireApprover, requireScope } from '../../auth/guards.js';
+import { requireHuman, requireScope } from '../../auth/guards.js';
 import { loadReviewData } from '../../services/review.js';
 import { config } from '../../config.js';
 import {
@@ -432,7 +432,7 @@ draftRoutes.post('/:draft_id/import', requireScope('projects:draft'), async (c) 
 
 // --- Human-only approval surface ------------------------------------------
 
-draftRoutes.get('/:draft_id/review', requireApprover(), async (c) => {
+draftRoutes.get('/:draft_id/review', requireHuman(), async (c) => {
   const draft = await loadOwnedDraft(c.get('actor'), c.req.param('draft_id'));
   const review = await loadReviewData(draft);
   const approval = await activeApproval(draft.id);
@@ -455,13 +455,10 @@ draftRoutes.get('/:draft_id/review', requireApprover(), async (c) => {
   );
 });
 
-draftRoutes.post('/:draft_id/approval', requireApprover(), async (c) => {
+draftRoutes.post('/:draft_id/approval', requireHuman(), async (c) => {
   const actor = c.get('actor');
-  if (actor.kind !== 'session' && actor.kind !== 'approver') throw ApiError.forbidden('A signed-in person is required.');
+  if (actor.kind !== 'session') throw ApiError.forbidden('A browser session is required.');
   const body = await parseJson(c, approvalSchema);
-  if (body.delegate_connection && actor.kind !== 'session') {
-    throw ApiError.forbidden('Delegating publication needs a browser session.');
-  }
   const { approvalId, draft } = await createApproval({
     actor,
     draftId: c.req.param('draft_id'),
@@ -469,8 +466,7 @@ draftRoutes.post('/:draft_id/approval', requireApprover(), async (c) => {
     payloadDigest: body.payload_digest,
     acknowledgedWarningCodes: body.acknowledged_warning_codes,
     decision: body.decision,
-    sessionId: actor.kind === 'session' ? actor.sessionId : null,
-    approverCredentialId: actor.kind === 'approver' ? actor.credentialId : null,
+    sessionId: actor.sessionId,
     delegateConnection: body.delegate_connection,
   });
   const approval = await activeApproval(draft.id);
@@ -487,7 +483,7 @@ draftRoutes.post('/:draft_id/approval', requireApprover(), async (c) => {
   );
 });
 
-draftRoutes.delete('/:draft_id/approval', requireApprover(), async (c) => {
+draftRoutes.delete('/:draft_id/approval', requireHuman(), async (c) => {
   await revokeApproval(c.get('actor'), c.req.param('draft_id'));
   return c.body(null, 204);
 });

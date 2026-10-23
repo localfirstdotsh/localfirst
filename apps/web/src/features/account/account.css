@@ -84,19 +84,6 @@
 .permission-list li { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr); gap: var(--space-4); padding: var(--space-2) 0; border-top: var(--space-px) solid var(--border); font-size: var(--text-meta); }
 .permission-list code { color: var(--fg); overflow-wrap: anywhere; }
 
-/* Devices */
-.device-row { padding: var(--space-4) var(--space-5); }
-.device-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'name action' 'facts action'; gap: var(--space-1) var(--space-4); align-items: center; }
-.device-main .row-heading { grid-area: name; }
-.device-facts { grid-area: facts; display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-6); margin: 0; }
-.device-facts > div { display: flex; gap: var(--space-2); }
-.device-facts dd { margin: 0; }
-.device-revoke { grid-area: action; }
-.device-row .confirmation { margin-top: var(--space-4); }
-.link-code { font-size: var(--text-state-page); font-weight: var(--weight-semibold); letter-spacing: .12em; }
-.steps { display: flex; flex-direction: column; gap: var(--space-6); margin: 0; padding-left: var(--space-5); }
-.steps > li::marker { color: var(--fg-muted); }
-
 /* Danger zone */
 .effects > li { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: var(--space-4); padding: var(--space-4) var(--space-5); }
 .effects h3 { color: var(--fg); }

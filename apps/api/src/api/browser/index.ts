@@ -16,7 +16,6 @@ import { activeApproval, loadOwnedDraft, serializeDraft } from '../../services/d
 import { loadReviewData } from '../../services/review.js';
 import { listConnections } from '../../services/connections.js';
 import { creatingConnection } from '../../services/delegation.js';
-import { listApproverDevices, pendingLinkByCode } from '../../services/approvers.js';
 import { fillDays, getOwnedProjectWithUsage, listOwnedProjectsWithUsage, usageSeries } from '../../services/usage.js';
 
 export const browserRoutes = new Hono<AppEnv>();
@@ -85,17 +84,6 @@ browserRoutes.get('/projects/:project_id/usage', requireHuman(), async (c) => {
   if (!project) throw ApiError.notFound();
   const range = c.req.query('days') === '90' ? 90 : 30;
   return c.json(success({ project, range, days: fillDays(await usageSeries(project.project_id, range), range) }, c.get('requestId')));
-});
-browserRoutes.get('/devices', requireHuman(), async (c) => {
-  const actor = c.get('actor');
-  if (actor.kind !== 'session') throw ApiError.forbidden();
-  const code = c.req.query('code');
-  const pending = code ? await pendingLinkByCode(code) : null;
-  const devices = await listApproverDevices(actor.userId);
-  return c.json(success({
-    link: pending ? { client_label: pending.clientLabel, user_code: pending.userCode } : null,
-    devices: devices.map((device) => ({ device_id: device.id, label: device.label, created_at: device.createdAt.toISOString(), expires_at: device.expiresAt.toISOString(), last_used_at: device.lastUsedAt?.toISOString() ?? null })),
-  }, c.get('requestId')));
 });
 browserRoutes.get('/deletion-preview', requireHuman(), async (c) => {
   const actor = c.get('actor');

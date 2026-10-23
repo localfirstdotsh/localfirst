@@ -543,9 +543,8 @@ export interface ApprovalDecisionInput {
   payloadDigest: string;
   acknowledgedWarningCodes: string[];
   decision: 'approved' | 'denied';
-  /** Exactly one of these records where the decision was made. */
-  sessionId: string | null;
-  approverCredentialId?: string | null;
+  /** The browser session that made the decision. */
+  sessionId: string;
   /** Also let the connection that created the draft publish without asking (browser session only). */
   delegateConnection?: boolean;
 }
@@ -647,7 +646,6 @@ export async function createApproval(
         policyVersion: APPROVAL_POLICY_VERSION,
         decision: 'denied',
         sessionId: input.sessionId,
-        approverCredentialId: input.approverCredentialId ?? null,
         expiresAt: new Date(Date.now() + config().ttl.approvalSeconds * 1000),
         revokedAt: new Date(),
       });
@@ -681,7 +679,6 @@ export async function createApproval(
         policyVersion: APPROVAL_POLICY_VERSION,
         decision: 'approved',
         sessionId: input.sessionId,
-        approverCredentialId: input.approverCredentialId ?? null,
         expiresAt: new Date(Date.now() + config().ttl.approvalSeconds * 1000),
       })
       .returning({ id: publicationApprovals.id });
