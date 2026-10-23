@@ -103,8 +103,9 @@ test.describe('browser account mutations and isolation', () => {
     await fixtureQuery('insert into oauth_consent (id, "clientId", "userId", scopes, "createdAt", "updatedAt") values ($1, $2, $3, $4::jsonb, now(), now())', [id, id, OWNER_ID, JSON.stringify(['projects:read'])]);
     await page.goto('/account/connections');
     const card = page.getByRole('article').filter({ hasText: name });
-    await card.getByText('Manage access', { exact: true }).click();
-    await card.getByText('Revoke access', { exact: true }).click();
+    await card.getByRole('button', { name: 'Manage access' }).click();
+    await expect(card.getByText('projects:read', { exact: true })).toBeVisible();
+    await card.getByRole('button', { name: 'Revoke access' }).click();
     await card.getByRole('button', { name: 'Confirm revocation' }).click();
     await expect(card).toHaveCount(0); await expect(page.getByRole('status').filter({ hasText: 'access revoked' })).toBeVisible();
     expect((await fixtureQuery('select id from oauth_consent where id = $1', [id])).rows).toHaveLength(0);
@@ -117,8 +118,8 @@ test.describe('browser account mutations and isolation', () => {
     await expect(page.getByRole('status').filter({ hasText: 'Return to your terminal' })).toBeVisible();
     const issued = await request.post(`/api/v1/approver-links/${link.link_id}/token`, { data: { poll_secret: link.poll_secret } });
     expect(issued.ok()).toBe(true);
-    await page.goto('/account/devices'); const card = page.getByRole('article').filter({ hasText: 'Browser test terminal' });
-    await card.getByText('Revoke', { exact: true }).click(); await card.getByRole('button', { name: 'Confirm revocation' }).click();
+    await page.goto('/account/devices'); const card = page.getByRole('listitem').filter({ hasText: 'Browser test terminal' });
+    await card.getByRole('button', { name: 'Revoke Browser test terminal' }).click(); await card.getByRole('button', { name: 'Confirm revocation' }).click();
     await expect(card).toHaveCount(0);
   });
   test('protects private read models, never caches them, and keeps public machine URLs working', async ({ request }) => {
@@ -142,10 +143,15 @@ test('deletion requires a matching handle and confirmation and reports only conf
   try {
     const page = await context.newPage(); await page.goto('/account/delete');
     await expect(page.getByText(/does not immediately erase all personal data/)).toBeVisible();
+    const submit = page.getByRole('button', { name: 'Confirm deletion request' });
+    await expect(submit).toBeDisabled();
     await page.getByLabel(`Type your handle: ${id}`, { exact: true }).fill('wrong-handle');
-    await page.getByRole('checkbox').check(); await page.getByRole('button', { name: 'Confirm deletion request' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: /handle/i })).toBeVisible();
-    await page.getByLabel(`Type your handle: ${id}`, { exact: true }).fill(id); await page.getByRole('button', { name: 'Confirm deletion request' }).click();
+    await page.getByRole('checkbox').check();
+    await expect(page.getByRole('alert').filter({ hasText: /does not match/i })).toBeVisible();
+    await expect(submit).toBeDisabled();
+    await page.getByLabel(`Type your handle: ${id}`, { exact: true }).fill(id);
+    await page.getByRole('checkbox').uncheck(); await expect(submit).toBeDisabled(); await page.getByRole('checkbox').check();
+    await expect(submit).toBeEnabled(); await submit.click();
     await expect(page.getByRole('status').filter({ hasText: 'Deletion requested.' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Confirm deletion request' })).toHaveCount(0);
     expect((await fixtureQuery('select deletion_requested_at from user_profiles where user_id = $1', [id])).rows[0]?.deletion_requested_at).toBeTruthy();

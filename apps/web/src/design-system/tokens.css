@@ -118,4 +118,7 @@
   --radius-sm: 6px;
   --radius-md: var(--radius);
   --content-max: 1200px;
+  --text-account-title: 1.75rem;
+  /* Space below the floating header: sticky columns start here so they never slide under it. */
+  --site-header-clearance: 96px;
 }

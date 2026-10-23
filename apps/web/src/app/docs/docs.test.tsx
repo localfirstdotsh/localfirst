@@ -55,9 +55,20 @@ describe('documentation discovery', () => {
     'keeps primary Docs navigation active at %s',
     (path) => {
       route.pathname = path;
-      expect(currentLink(renderToStaticMarkup(<NavLinks />))).toEqual([expect.stringContaining('href="/docs"')]);
+      expect(currentLink(renderToStaticMarkup(<NavLinks account={null} />))).toEqual([expect.stringContaining('href="/docs"')]);
     },
   );
+
+  it('offers Sign in to visitors and an Account link, never both, to a signed-in person', () => {
+    route.pathname = '/docs';
+    const visitor = renderToStaticMarkup(<NavLinks account={null} />);
+    expect(visitor).toContain('href="/sign-in"');
+    expect(visitor).not.toContain('href="/account/projects"');
+    const member = renderToStaticMarkup(<NavLinks account={{ handle: 'ada' }} />);
+    expect(member).toContain('href="/account/projects"');
+    expect(member).toContain('signed in as ada');
+    expect(member).not.toContain('Sign in');
+  });
 
   it('marks only the selected guide as current in shared navigation', () => {
     route.pathname = '/docs/environments/setup';

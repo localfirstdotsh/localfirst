@@ -1,1 +1,1 @@
-export { ApplicationIdentity, Permissions, SecurityNotice, elevatedScopes } from './Permissions';
+export { ApplicationIdentity, PermissionGroup, PermissionSummary, Permissions, SecurityNotice, elevatedScopes, groupScopes } from './Permissions';
