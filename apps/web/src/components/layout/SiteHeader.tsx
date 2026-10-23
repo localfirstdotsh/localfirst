@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { NavLinks } from './NavLinks';
 import { Logo } from '../ui/Logo';
+import { readAccountSession } from '../../lib/account-session';
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const account = await readAccountSession();
   return (
     <header className="site-header">
       <div className="container">
@@ -10,7 +12,7 @@ export function SiteHeader() {
           <Logo className="brand-mark" aria-hidden="true" focusable="false" />
           localfirst.sh
         </Link>
-        <NavLinks />
+        <NavLinks account={account} />
       </div>
     </header>
   );

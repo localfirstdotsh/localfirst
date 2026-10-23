@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { Icon } from '../ui/Icon';
 
 const LINKS = [
   { href: '/docs', label: 'Docs' },
 ] as const;
 const MODIFIERS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock']);
 
-export function NavLinks() {
+export function NavLinks({ account }: { account: { handle: string | null } | null }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
@@ -60,7 +61,9 @@ export function NavLinks() {
           const active = pathname === link.href || pathname.startsWith(`${link.href}/`) || (link.label === 'Docs' && pathname.startsWith('/docs/'));
           return <Link key={link.href} href={link.href} aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}>{link.label}</Link>;
         })}
-        {pathname !== '/sign-in' && <a href="/sign-in" className="button button-small nav-sign-in" onClick={() => setOpen(false)}>Sign in</a>}
+        {account
+          ? <Link href="/account/projects" className="nav-account" aria-current={pathname.startsWith('/account') ? 'page' : undefined} onClick={() => setOpen(false)}><Icon name="account" />Account{account.handle && <span className="visually-hidden"> (signed in as {account.handle})</span>}</Link>
+          : pathname !== '/sign-in' && <a href="/sign-in" className="button button-small nav-sign-in" onClick={() => setOpen(false)}>Sign in</a>}
       </nav>
     </>
   );

@@ -13,7 +13,7 @@ export function FormField({ id, label, children, help, error }: {
       <label className="muted" htmlFor={id}>{label}</label>
       {children}
       {help && <p id={`${id}-help`} className="muted">{help}</p>}
-      {error && <p id={`${id}-error`} className="field-error">{error}</p>}
+      {error && <p id={`${id}-error`} className="field-error" role="alert">{error}</p>}
     </div>
   );
 }

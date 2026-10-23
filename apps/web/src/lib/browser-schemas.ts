@@ -7,6 +7,7 @@ export const browserConfigSchema = z.object({
   auth_base_path: z.string().startsWith('/'), sign_in_enabled: z.boolean(), resource: z.string(),
   scope_descriptions: z.record(z.string(), z.string()),
 });
+export const sessionSchema = z.object({ authenticated: z.boolean(), handle: z.string().nullable() });
 export const clientIdentitySchema = z.object({
   kind: z.enum(['local', 'recognized', 'unrecognized']), label: z.string().nullable(), destinations: z.array(z.string()), claims_to_be: z.string().nullable(),
 });
