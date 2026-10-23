@@ -60,7 +60,7 @@ export function NavLinks() {
           const active = pathname === link.href || pathname.startsWith(`${link.href}/`) || (link.label === 'Docs' && pathname.startsWith('/docs/'));
           return <Link key={link.href} href={link.href} aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}>{link.label}</Link>;
         })}
-        <a href="/sign-in" className="button button-small nav-sign-in" onClick={() => setOpen(false)}>Sign in</a>
+        {pathname !== '/sign-in' && <a href="/sign-in" className="button button-small nav-sign-in" onClick={() => setOpen(false)}>Sign in</a>}
       </nav>
     </>
   );

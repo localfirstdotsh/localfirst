@@ -15,6 +15,12 @@
 .category-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; border-bottom: 2px solid transparent; color: var(--fg-muted); font-size: 14px; white-space: nowrap; }
 .category-tabs a:hover { color: var(--fg); background: var(--hairline); }
 .category-tabs a[aria-current='true'] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+@media (max-width: 599px) {
+  .category-tabs { overflow-x: visible; }
+  .category-tabs ul { flex-wrap: wrap; width: auto; gap: 8px; }
+  .category-tabs a { border: 1px solid var(--control-border); border-radius: var(--radius); }
+  .category-tabs a[aria-current='true'] { border-color: var(--accent); background: var(--hairline); }
+}
 
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .discovery-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start; }
