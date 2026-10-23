@@ -90,7 +90,7 @@ Priorities match the backend: **P0 / Phase 1 registry**, **P1 / Phase 2 local te
 | FE-005 | P0 | Exact project-version navigation; historical versions cannot silently become current |
 | FE-006 | Preview | Thin Models/Hardware catalogs, available only with the explicit catalog preview setting |
 | FE-007 | P0 | Browser login, narrow agent consent, connection management, and sign-out |
-| FE-008 | P0 | Agent-first Publish page and owner draft review with enforced exact-artifact approval |
+| FE-008 | P0 | Agent-first Publish page and owner draft review with enforced exact-artifact approval or per-connection publication delegation |
 | FE-009 | P0 | Source-independent project presentation, including authored specifications/hardware notes |
 | FE-010 | P0 | Evidence/unknown/privacy labels and moderation/visibility states |
 | FE-011 | P0 | Responsive, keyboard/screen-reader-accessible interface and safe Markdown rendering |
@@ -125,6 +125,8 @@ flowchart TD
     Publish --> Draft[Owner draft review]
     Draft --> Approval[Exact-artifact approval]
     Approval --> Published[Published immutable version]
+    Publish --> Delegated[Delegated connection publishes]
+    Delegated --> Published
     Tests --> Runner[Local CLI / existing agent]
     Runner --> LocalReport[Local report and optional sanitized export]
     LocalReport --> Draft
@@ -149,8 +151,7 @@ These are **frontend routes**, not new API endpoints. The public application and
 | `/account/drafts` | P0 | Owner | Own permitted drafts and review links |
 | `/account/projects` | P0 | Owner, on the website origin | Projects the signed-in person manages, with lifetime request totals; links to each project's usage |
 | `/account/projects/:project_id/usage` | P0 | Manager only, on the website origin | Requests per day (30 or 90 days) as two charts plus a table; anyone else gets the same not-found as a missing project |
-| `/account/connections` | P0 | Human session | Granted clients/scopes and revocation |
-| `/account/devices` | P1 | Human session | Approve a terminal's link code; linked approval devices and revocation |
+| `/account/connections` | P0 | Human session | Granted clients/scopes, publication delegation, delegated publications, and revocation |
 | `/account/privacy` | P0 | Human session | Session/deletion controls and data-sharing explanation |
 | `/sign-in` | P0 | Public initiation | Redirect or shared login UI at the trusted auth origin |
 | `/consent` | P0 | Human session | Canonical OAuth client/resource/scope consent surface |
@@ -335,6 +336,8 @@ Jetson vision/robotics entries can be useful documentation/manual builds while t
 ### 6.5 Version navigation
 
 Default detail resolves the current published version once and shows which version is being viewed. History selection changes the route to an exact version ID. Back/reload preserves that selection. A “Latest version available” notice links to current content but never changes the version behind an open test plan, build, report, or approval.
+
+A version published under delegation says so: "Published by <client> for @owner without per-version review", with the client name marked as self-reported.
 
 Historical views display their own source/model/runtime/test references and evidence. Upstream source drift is distinct from a new published Localfirst version. A version with source unavailable can remain readable as historical documentation while its executable action is blocked by policy.
 
@@ -613,7 +616,7 @@ Future live setup must explain event delivery/deduplication, cancellation and re
 
 ### 11.1 Publish entry page
 
-`/publish` leads with **Publish with your agent**, describes repository/specification/hardware-note inputs, offers tested connection docs, and explains the draft -> review -> approve -> publish sequence. The agent handles metadata extraction and `PROJECT.md` generation through shared API/MCP.
+`/publish` leads with **Publish with your agent**, describes repository/specification/hardware-note inputs, offers tested connection docs, and explains the draft -> review -> approve -> publish sequence, and that an owner can let one trusted connection publish without the review step. The agent handles metadata extraction and `PROJECT.md` generation through shared API/MCP.
 
 P0 does not require a full website Markdown authoring form. A human may inspect existing owned drafts, export the specification, and follow an exact review link. Optional direct text submission/editor is later work unless needed by validated user demand; it must use the same lifecycle/policies rather than a second publishing route.
 
@@ -638,6 +641,8 @@ Required acknowledgements come from server policy for that revision. Blockers ca
 Default agent workflow button: **Approve this version for publication**. It records human approval; it does not by itself mean the agent has published. Show **Approved — awaiting publication** with expiry and a safe “Return to your agent” next step. Do not expose approval secrets in URLs, public page metadata, logs, or generic clipboard actions.
 
 If a direct browser publish path is implemented, label its actual effect clearly, call approval and publication through the same backend services, and show success only after the immutable artifact response. Preserve one publication idempotency key across retries of the same intended mutation. Disabling duplicate clicks helps UX but is not a server guarantee.
+
+A secondary action, **Approve and let <client> publish without asking**, records the same approval and enables publication delegation for the connection that created the draft. It names that client (marked as self-reported), says that future drafts from it will be published without this page, and links to `/account/connections` to turn it off. It is never preselected, and it is absent when the draft did not come from a connection.
 
 Changes after review, expiry, revoked approval, policy updates, or revision conflicts disable stale approval/publication and require a fresh exact preview. On an uncertain network result, re-read draft/operation state before retrying; never create a new version blindly.
 
@@ -671,11 +676,11 @@ Use auth-library contracts for sessions and CSRF/origin protections. Tokens/code
 
 Show the requesting client's display identity/source context, canonical Localfirst resource, narrow requested capabilities in plain language, grant/deny actions, and how to revoke access. Client names/logos are untrusted display metadata; do not imply verified developer identity without evidence.
 
-Consent can grant project reads, draft writes, publishing, private build writes, or sanitized report submission as appropriate to implemented phase. A read-only connection must not inherit publication/runner execution rights. Protocol identity/refresh scopes are explained separately. This is recurring access consent, not approval of any artifact/test.
+Consent can grant project reads, draft writes, publishing, private build writes, or sanitized report submission as appropriate to implemented phase. A read-only connection must not inherit publication/runner execution rights. Protocol identity/refresh scopes are explained separately. This is recurring access consent, not approval of any artifact/test. Consent never enables publication delegation: a granted publish permission still needs an exact approval for each artifact until the person turns delegation on for that connection.
 
 ### 12.3 Connections and privacy
 
-Connections list safe client/scope/resource/grant summaries and known revocation state; no credential bodies. Revocation confirmation describes which access is withdrawn and the backend's documented short-lived token/cache bounds. It does not claim to uninstall a client from the user's machine.
+Connections list safe client/scope/resource/grant summaries and known revocation state; no credential bodies. Each connection with a publish permission has a **Publish without asking me** setting, off by default. Turning it on requires a confirmation that names the client and the effect; turning it off takes effect within the documented token/cache bounds and leaves published versions in place. The row lists that connection's delegated publications with links and an unpublish action. Revocation confirmation describes which access is withdrawn and the backend's documented short-lived token/cache bounds. It does not claim to uninstall a client from the user's machine.
 
 Privacy view explains what is centrally stored, what remains local, private/public contribution controls, retention/deletion, and safe support identifiers. Account deletion requires recent authentication and a concrete effect review. A guest/local tester has no obligation to create an account.
 
@@ -708,7 +713,7 @@ Typography: homepage wordmark 64–260px (44–118px on mobile), homepage lede 2
 
 The mobile navigation is a disclosure with an explicit Menu button, Escape dismissal and focus return, and real links. Active routes use an underline plus `aria-current`; Home does not mark Projects as its current page. Header focus tracks pointer versus intentional keyboard input: modifier-only keys do not change modality, so Chromium’s Shift heuristic cannot add an outline to a clicked link. Tab and Shift+Tab retain visible keyboard focus. Shared Select controls support arrow keys, Home/End, typeahead, Enter/Space, Escape, Tab, and outside dismissal; values submit through hidden form inputs.
 
-Trusted browser pages use responsive width variants: authentication 34rem, consent 34rem, account settings 47.5rem content beside a 12.5rem navigation column, and publication review 58rem. These are maximum widths, with intrinsic sizing and the existing 4px spacing scale. The authentication layout centers a compact sign-in flow; other layouts use a shared brand header and a footer at the viewport bottom for short pages. Account navigation has only real My projects, Connections, Approval devices, and Danger zone destinations. It is one sidebar shared by every account page (a compact wrapped row on narrow screens), sticky below the floating header, with Danger zone set apart by a divider and Sign out beneath it (elsewhere the header carries Sign out). Connected applications show an unverified-identity marker, a one-line summary per capability, and the exact scopes only on request; revocation and device removal ask for confirmation inline; account deletion stays disabled until the handle matches and the acknowledgement is checked.
+Trusted browser pages use responsive width variants: authentication 34rem, consent 34rem, account settings 47.5rem content beside a 12.5rem navigation column, and publication review 58rem. These are maximum widths, with intrinsic sizing and the existing 4px spacing scale. The authentication layout centers a compact sign-in flow; other layouts use a shared brand header and a footer at the viewport bottom for short pages. Account navigation has only real My projects, Connections, and Danger zone destinations. It is one sidebar shared by every account page (a compact wrapped row on narrow screens), sticky below the floating header, with Danger zone set apart by a divider and Sign out beneath it (elsewhere the header carries Sign out). Connected applications show an unverified-identity marker, a one-line summary per capability, and the exact scopes only on request; revocation and device removal ask for confirmation inline; account deletion stays disabled until the handle matches and the acknowledgement is checked.
 
 Use one bounded panel where useful for consent and each connected application. Review sections use thin dividers rather than nested cards. Surfaces use the shared flat panel treatment; control/card radii stay 8/12px. Primary Kiwi buttons use near-black text and 44px minimum control height. Native disclosures expose exact scope lists, identifiers, digests, and raw artifacts. Artifact text wraps by default, with copy/select fallback, line-wrap toggle, and expandable height. React escapes untrusted strings and serializes props safely. No external HTML or script from an artifact is executed.
 
