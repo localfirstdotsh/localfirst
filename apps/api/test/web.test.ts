@@ -37,9 +37,9 @@ describe('browser read models', () => {
     const anonymous = await request('/api/browser/session');
     expect(anonymous.status).toBe(200);
     expect(anonymous.headers.get('cache-control')).toBe('no-store');
-    expect(anonymous.json.data).toEqual({ authenticated: false, handle: null });
+    expect(anonymous.json.data).toEqual({ authenticated: false, handle: null, auth_base_path: config().authBasePath });
     expect((await request('/api/browser/session', { user: account.userId, actorKind: 'token' })).json.data.authenticated).toBe(false);
-    expect((await request('/api/browser/session', { user: account.userId })).json.data).toEqual({ authenticated: true, handle: account.handle });
+    expect((await request('/api/browser/session', { user: account.userId })).json.data).toEqual({ authenticated: true, handle: account.handle, auth_base_path: config().authBasePath });
   });
   it('requires a signed-in person for the review page', async () => {
     const account = await createAccount();

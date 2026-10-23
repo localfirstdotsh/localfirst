@@ -64,10 +64,12 @@ describe('documentation discovery', () => {
     const visitor = renderToStaticMarkup(<NavLinks account={null} />);
     expect(visitor).toContain('href="/sign-in"');
     expect(visitor).not.toContain('href="/account/projects"');
-    const member = renderToStaticMarkup(<NavLinks account={{ handle: 'ada' }} />);
+    const member = renderToStaticMarkup(<NavLinks account={{ handle: 'ada', authBase: '/api/auth' }} />);
     expect(member).toContain('href="/account/projects"');
     expect(member).toContain('signed in as ada');
     expect(member).not.toContain('Sign in');
+    expect(member).toContain('Sign out');
+    expect(visitor).not.toContain('Sign out');
   });
 
   it('marks only the selected guide as current in shared navigation', () => {
