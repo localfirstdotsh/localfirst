@@ -22,7 +22,7 @@ test.describe('owner usage screen', () => {
     await expect(page.getByText('Specification exports', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('Agent retrievals', { exact: true }).first()).toBeVisible();
     // A signed-in person sees their account control, not a Sign in button.
-    await expect(page.locator('a.nav-account')).toHaveAttribute('href', '/account/projects');
+    await expect(page.locator('.account-menu-trigger')).toHaveCount(1);
     await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(0);
 
     await page.getByRole('link', { name: 'Requests per day' }).first().click();

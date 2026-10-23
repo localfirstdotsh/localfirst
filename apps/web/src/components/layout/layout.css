@@ -37,12 +37,19 @@ html { scroll-padding-top: 100px; }
 /* Chromium promotes a pointer-focused link to :focus-visible on Shift alone.
    Preserve the pointer modality until an intentional navigation key is pressed. */
 :root[data-input-modality='pointer'] .site-header :focus-visible { outline: none; }
-.nav .nav-account { gap: 8px; color: var(--fg); background: var(--hover); }
-.nav .nav-account:hover { background: var(--border-strong); }
-.nav .nav-sign-out { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 0; border-radius: var(--radius-pill); background: none; color: var(--fg-muted); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: color 150ms, background-color 150ms; }
-.nav .nav-sign-out:hover:not(:disabled) { color: var(--fg); background: var(--hover); }
-.nav .sign-out-error { position: absolute; top: calc(100% + 8px); right: 0; max-width: 18rem; padding: 6px 12px; border-radius: var(--radius); background: var(--card); }
-.nav .sign-out-error:empty { display: none; }
+.account-menu { position: relative; }
+.account-menu-trigger { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px 0 16px; border: 0; border-radius: var(--radius-pill); background: var(--hover); color: var(--fg); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 150ms; }
+.account-menu-trigger:hover, .account-menu-trigger[aria-expanded='true'] { background: var(--border-strong); }
+.account-menu-trigger .disclosure-chevron { width: 14px; height: 14px; transition: transform 150ms; }
+.account-menu-trigger[aria-expanded='true'] .disclosure-chevron { transform: rotate(180deg); }
+.account-menu-list { position: absolute; top: calc(100% + 14px); right: 0; z-index: 7; display: flex; flex-direction: column; gap: 2px; min-width: 15rem; padding: 6px; border: 1px solid var(--border-strong); border-radius: 16px; background: var(--card); box-shadow: 0 12px 32px rgb(0 0 0 / .45); }
+.account-menu-list[hidden] { display: none; }
+.account-menu-label { display: none; }
+.nav .account-menu-list a, .account-menu-item { display: flex; align-items: center; justify-content: flex-start; gap: 10px; width: 100%; min-height: 40px; padding: 0 12px; border: 0; border-radius: var(--radius); background: none; color: var(--fg-muted); font: inherit; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+.nav .account-menu-list a:hover, .nav .account-menu-list a[aria-current='page'], .account-menu-item:hover:not(:disabled) { color: var(--fg); background: var(--hover); }
+.account-menu-divider { height: 1px; margin: 4px 6px; background: var(--border); }
+.account-menu-list .sign-out-error { padding: 6px 12px; }
+.account-menu-list .sign-out-error:empty { display: none; }
 .nav .nav-sign-in { color: var(--header-action-text); background: var(--fg); border: 1px solid var(--fg); }
 .nav .nav-sign-in:hover { color: var(--header-action-text); background: color-mix(in srgb, var(--fg) 85%, var(--header-surface)); }
 .site-header .mobile-menu-button { display: none; width: 44px; height: 44px; padding: 0; margin-left: auto; border-color: transparent; border-radius: var(--radius-pill); }
