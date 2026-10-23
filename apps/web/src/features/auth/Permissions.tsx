@@ -37,17 +37,36 @@ function Destination({ app }: { app: ClientIdentity }) {
     <p>After you allow, your approval is sent to <strong>{where}</strong>. Continue only if you just started this connection yourself from an application you trust.</p>
   </div>;
 }
-export function Permissions({ scopes, descriptions }: { scopes: readonly string[]; descriptions: Record<string, string> }) {
-  const description = (scope: string): string => Object.hasOwn(descriptions, scope) ? descriptions[scope]! : Object.hasOwn(PROTOCOL, scope) ? PROTOCOL[scope]! : 'An additional scope is requested. Inspect its exact name before consenting.';
+const describeScope = (scope: string, descriptions: Record<string, string>): string => Object.hasOwn(descriptions, scope) ? descriptions[scope]! : Object.hasOwn(PROTOCOL, scope) ? PROTOCOL[scope]! : 'An additional scope is requested. Inspect its exact name before consenting.';
+export interface ScopeGroup { level: ScopeLevel; title: string; note?: string; scopes: string[] }
+/** Scopes by what they let the application do, most powerful first. Every scope appears exactly once, known or not. */
+export function groupScopes(scopes: readonly string[], descriptions: Record<string, string>): ScopeGroup[] {
   const groups = new Map<ScopeLevel, string[]>();
   for (const scope of scopes) {
     const level = scopeLevel(scope, Object.hasOwn(descriptions, scope));
     groups.set(level, [...(groups.get(level) ?? []), scope]);
   }
+  return ORDER.filter((level) => groups.has(level)).map((level) => ({ level, ...GROUPS[level], scopes: groups.get(level)! }));
+}
+/** The default view of what an application can do: one line per capability, no scope names. */
+export function PermissionSummary({ groups }: { groups: readonly ScopeGroup[] }) {
+  if (groups.length === 0) return <p className="small muted">No permissions granted.</p>;
+  return <ul className="permission-summary">{groups.map((group) => <li key={group.level} data-level={group.level}><span>{group.title}</span><span className="muted">{group.scopes.length}</span></li>)}</ul>;
+}
+/** One capability with each exact scope and what it allows. */
+export function PermissionGroup({ group, descriptions }: { group: ScopeGroup; descriptions: Record<string, string> }) {
+  return <section className="stack gap-8 permission-group" data-level={group.level}>
+    <div className="permission-group-head"><h3 className="section-title">{group.title}</h3><span className="small muted">{group.scopes.length} {group.scopes.length === 1 ? 'permission' : 'permissions'}</span></div>
+    {group.note && <p className="small muted">{group.note}</p>}
+    <ul className="permission-list">{group.scopes.map((scope, index) => <li key={`${scope}-${index}`}><code>{scope}</code><span className="muted">{describeScope(scope, descriptions)}</span></li>)}</ul>
+  </section>;
+}
+export function Permissions({ scopes, descriptions }: { scopes: readonly string[]; descriptions: Record<string, string> }) {
+  const groups = groupScopes(scopes, descriptions);
   return <div className="stack gap-16 browser-permissions">
-    {groups.size === 0 && <p className="muted">No permissions requested.</p>}
-    {ORDER.filter((level) => groups.has(level)).map((level) => <section className="stack gap-8" key={level} data-level={level}><h3 className="section-title">{GROUPS[level].title}</h3>{GROUPS[level].note && <p className="small muted">{GROUPS[level].note}</p>}<p>{groups.get(level)!.map(description).join(' ')}</p></section>)}
-    <details><summary>Inspect all {scopes.length} exact permissions</summary><ul className="compact-list">{scopes.map((scope, index) => <li key={`${scope}-${index}`}><code>{scope}</code> — {description(scope)}</li>)}</ul></details>
+    {groups.length === 0 && <p className="muted">No permissions requested.</p>}
+    {groups.map((group) => <section className="stack gap-8" key={group.level} data-level={group.level}><h3 className="section-title">{group.title}</h3>{group.note && <p className="small muted">{group.note}</p>}<p>{group.scopes.map((scope) => describeScope(scope, descriptions)).join(' ')}</p></section>)}
+    <details><summary>Inspect all {scopes.length} exact permissions</summary><ul className="compact-list">{scopes.map((scope, index) => <li key={`${scope}-${index}`}><code>{scope}</code> — {describeScope(scope, descriptions)}</li>)}</ul></details>
   </div>;
 }
 export function SecurityNotice() {

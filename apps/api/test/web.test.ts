@@ -32,6 +32,15 @@ describe('browser read models', () => {
     expect(response.text).not.toContain(config().authSecret);
     expect(response.text).not.toContain(config().github.clientSecret);
   });
+  it('reports only whether a human session exists, and never treats an agent credential as one', async () => {
+    const account = await createAccount();
+    const anonymous = await request('/api/browser/session');
+    expect(anonymous.status).toBe(200);
+    expect(anonymous.headers.get('cache-control')).toBe('no-store');
+    expect(anonymous.json.data).toEqual({ authenticated: false, handle: null });
+    expect((await request('/api/browser/session', { user: account.userId, actorKind: 'token' })).json.data.authenticated).toBe(false);
+    expect((await request('/api/browser/session', { user: account.userId })).json.data).toEqual({ authenticated: true, handle: account.handle });
+  });
   it('requires a signed-in person for the review page', async () => {
     const account = await createAccount();
     const { draft } = await createDirectProjectDraft({ actor: account.actor, ownerUserId: account.userId, projectId: null, payload: { project_md: projectDocument({ key: 'review-page' }), files: [] } });

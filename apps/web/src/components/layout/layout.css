@@ -37,6 +37,8 @@ html { scroll-padding-top: 100px; }
 /* Chromium promotes a pointer-focused link to :focus-visible on Shift alone.
    Preserve the pointer modality until an intentional navigation key is pressed. */
 :root[data-input-modality='pointer'] .site-header :focus-visible { outline: none; }
+.nav .nav-account { gap: 8px; color: var(--fg); background: var(--hover); }
+.nav .nav-account:hover { background: var(--border-strong); }
 .nav .nav-sign-in { color: var(--header-action-text); background: var(--fg); border: 1px solid var(--fg); }
 .nav .nav-sign-in:hover { color: var(--header-action-text); background: color-mix(in srgb, var(--fg) 85%, var(--header-surface)); }
 .site-header .mobile-menu-button { display: none; width: 44px; height: 44px; padding: 0; margin-left: auto; border-color: transparent; border-radius: var(--radius-pill); }
