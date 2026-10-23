@@ -1,7 +1,6 @@
 const PATHS = {
   projects: 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
   connections: 'M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0zM12 16v5',
-  devices: 'M4 5h16v11H4zM2 20h20M9 16v4M15 16v4',
   danger: 'M12 3 2.5 20h19zM12 10v4.5M12 17.5v.01',
   account: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0',
   chevron: 'm6 9 6 6 6-6',

@@ -68,6 +68,7 @@ export default async function VersionsPage({ params }: { params: Promise<{ slug:
                 <span>{version.is_current ? 'Current version' : 'Historical version'}</span>
                 <span>Registry version {version.version_number}</span>
                 <span>Published {formatDate(version.published_at)}</span>
+                {version.publication?.authorization === 'delegated' && <span>Published without per-version review</span>}
               </div>
             </div>
             <div className="row-side">

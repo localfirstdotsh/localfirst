@@ -21,6 +21,7 @@ import { assertWarningsAcknowledged } from '../domain/approval.js';
 import { validateDraft, type DraftPayload, type RegistryValidation } from './validation.js';
 import { writeAudit } from './audit.js';
 import { createOperation } from './operations.js';
+import { creatingClient, delegateCreatingConnection } from './delegation.js';
 import { enqueueJob } from './jobs.js';
 import { emitEvent } from './outbox.js';
 import { evaluateRecordDraft, isRecordKind, type RecordDraftPayload } from './contributions.js';
@@ -44,6 +45,8 @@ export interface DraftRecord {
   importDescriptor: unknown;
   importError: unknown;
   operationId: string | null;
+  /** The connection that created this draft, if one did (section 10.4). */
+  createdByClientId: string | null;
   publishedVersionId: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -226,6 +229,7 @@ export async function createDirectProjectDraft(
         projectId: input.projectId,
         payload: input.payload,
         payloadDigest: validation.payload_digest,
+        createdByClientId: creatingClient(input.actor),
         ...validationFields(validation),
       })
       .returning();
@@ -277,6 +281,7 @@ export async function createImportProjectDraft(
         payloadDigest: digestOfBytes(JSON.stringify(input.descriptor)),
         importDescriptor: input.descriptor,
         sourceGeneration: 1,
+        createdByClientId: creatingClient(input.actor),
       })
       .returning();
     if (!row) throw ApiError.internal('The draft could not be created.');
@@ -538,9 +543,10 @@ export interface ApprovalDecisionInput {
   payloadDigest: string;
   acknowledgedWarningCodes: string[];
   decision: 'approved' | 'denied';
-  /** Exactly one of these records where the decision was made. */
-  sessionId: string | null;
-  approverCredentialId?: string | null;
+  /** The browser session that made the decision. */
+  sessionId: string;
+  /** Also let the connection that created the draft publish without asking (browser session only). */
+  delegateConnection?: boolean;
 }
 
 /**
@@ -606,6 +612,15 @@ export async function createApproval(
   if (input.decision === 'approved') {
     assertWarningsAcknowledged(validation.warning_codes, input.acknowledgedWarningCodes);
   }
+  const delegateClientId = input.delegateConnection && input.decision === 'approved' ? existing.createdByClientId : null;
+  if (input.delegateConnection && !delegateClientId) {
+    throw new ApiError({
+      code: ERROR_CODES.INVALID_LIFECYCLE,
+      message: input.decision === 'approved'
+        ? 'This draft was not created by a connection, so there is nothing to delegate to.'
+        : 'Delegation can only be granted together with an approval.',
+    });
+  }
 
   return db().transaction(async (tx) => {
     await lockActiveAccount(tx, existing.ownerUserId);
@@ -631,7 +646,6 @@ export async function createApproval(
         policyVersion: APPROVAL_POLICY_VERSION,
         decision: 'denied',
         sessionId: input.sessionId,
-        approverCredentialId: input.approverCredentialId ?? null,
         expiresAt: new Date(Date.now() + config().ttl.approvalSeconds * 1000),
         revokedAt: new Date(),
       });
@@ -665,11 +679,11 @@ export async function createApproval(
         policyVersion: APPROVAL_POLICY_VERSION,
         decision: 'approved',
         sessionId: input.sessionId,
-        approverCredentialId: input.approverCredentialId ?? null,
         expiresAt: new Date(Date.now() + config().ttl.approvalSeconds * 1000),
       })
       .returning({ id: publicationApprovals.id });
     if (!approval) throw ApiError.internal('The approval could not be recorded.');
+    if (delegateClientId) await delegateCreatingConnection(tx, input.actor, delegateClientId);
 
     const [row] = await tx
       .update(drafts)

@@ -28,7 +28,6 @@ import { pruneRateLimits } from '../../http/rate-limit.js';
 import { markOperationFailed, markOperationRunning } from '../../services/operations.js';
 import type { ClaimedJob, JobKind } from '../../services/jobs.js';
 import { RETENTION_POLICY_VERSION } from '../../domain/policy.js';
-import { pruneApprovers } from '../../services/approvers.js';
 
 const log = createLogger('worker');
 
@@ -169,7 +168,6 @@ const handleRetentionSweep: JobHandler = async () => {
   await pruneIdempotencyRecords();
   await pruneDispatchedEvents(new Date(Date.now() - 30 * 24 * 3600 * 1000));
   const rateLimits = await pruneRateLimits();
-  const approversPruned = await pruneApprovers();
 
   // Discarded drafts keep 30 days of recoverability, then their content goes.
   const cutoff = new Date(Date.now() - 30 * 24 * 3600 * 1000);
@@ -188,7 +186,6 @@ const handleRetentionSweep: JobHandler = async () => {
   return {
     policy_version: RETENTION_POLICY_VERSION,
     rate_limit_rows_pruned: rateLimits,
-    approver_rows_pruned: approversPruned,
     discarded_drafts_cleared: cleared.length,
   };
 };

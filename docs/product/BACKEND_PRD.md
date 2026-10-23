@@ -66,7 +66,7 @@ Route/tool phase labels are binding: a future feature is not advertised as avail
 | FR-03 | P0 | Immutable project versions, author attribution, explicit unknown fields, and source provenance |
 | FR-04 | P0 | Task/model/runtime/hardware search and conservative compatibility assessment |
 | FR-05 | P0 | GitHub human sign-in; resource-scoped Localfirst OAuth credentials for agents |
-| FR-06 | P0 | Exact-artifact publication approval, ownership checks, moderation, idempotency, and audit |
+| FR-06 | P0 | Publication authorized by an exact-artifact human approval or by a per-connection delegation the owner enabled; ownership checks, moderation, idempotency, and audit |
 | FR-07 | P0 | Curate five attributed Jetson/edge entries without claiming execution or endorsement |
 | FR-08 | P0 | Public schema/spec retrieval and tested MCP setup instructions above the catalog |
 | FR-09 | P1 | Open-source local runner with separate Ollama and LM Studio discovery/inference adapters |
@@ -160,7 +160,7 @@ MCP and REST tokens have their own resource audiences. Do not accept a token for
 
 ### 2.5 Browser UI and backend authority
 
-All browser pages are owned by the root Next.js `apps/web/` app: public discovery, sign-in, OAuth consent, account connections/devices/projects/usage/deletion, publication review and privacy. They share the production React components and light/dark tokens. The backend supplies JSON read models and retains all authentication, ownership, approval and publication enforcement; it no longer renders HTML pages. Previously issued backend sign-in/account/review/privacy URLs return uncached redirects to the website, preserving their path and original query.
+All browser pages are owned by the root Next.js `apps/web/` app: public discovery, sign-in, OAuth consent, account connections/projects/usage/deletion, publication review and privacy. They share the production React components and light/dark tokens. The backend supplies JSON read models and retains all authentication, ownership, approval and publication enforcement; it no longer renders HTML pages. Previously issued backend sign-in/account/review/privacy URLs return uncached redirects to the website, preserving their path and original query.
 
 | Layer | Source | Responsibility |
 | --- | --- | --- |
@@ -505,7 +505,7 @@ localfirstdotsh report submit <approved-sanitized-export>
 localfirstdotsh contribution review <draft-id>
 ```
 
-Noninteractive test execution requires a locally established approval bound to exact spec/model/settings/data class and resource effects; a fetched manifest's `allow_run: true` is never authorization. A generic `--yes` cannot bundle discovery, execution, downloads, and publication. API tokens grant registry rights only. CLI publication review may open the minimal trusted browser confirmation surface; trustworthy purely local artifact approval is an open extension, not a caller-supplied boolean.
+Noninteractive test execution requires a locally established approval bound to exact spec/model/settings/data class and resource effects; a fetched manifest's `allow_run: true` is never authorization. A generic `--yes` cannot bundle discovery, execution, downloads, and publication. API tokens grant registry rights only. `contribution review` shows a draft's state and can open the browser review page; the CLI never records a publication approval itself (§10.4).
 
 An optional local stdio MCP adapter can expose these local capabilities later. Do not expose them as hosted registry tools or a public HTTP daemon in P1. If a future browser companion is introduced, require loopback binding, per-session pairing, Origin/Host validation, CSRF protection, capability grants, and a dedicated threat review.
 
@@ -729,15 +729,17 @@ Localfirst OAuth authenticates agents to registry resources. GitHub tokens and O
 | --- | --- | --- | --- |
 | `projects:read` | P0 | Hosted MCP catalog/resources/compatibility queries | Visible public records; no other users' drafts |
 | `projects:draft` | P0 | Own project drafts, imports, validation/export | Ownership and source policy |
-| `projects:publish` | P0 | Publish exact approved own project artifact | Separate human approval required |
+| `projects:publish` | P0 | Publish exact approved own project artifact | Exact human approval, or delegation enabled for the connection (§10.4) |
 | `projects:update` | P0 | Version updates and owned listing visibility | No immutable edits or quarantine override |
 | `profile:read` | P0 | Minimal own identity/account state | No provider credentials |
 | `builds:write` | P1 | Save/read own private builds and prepare build drafts | No evidence authority |
-| `builds:publish` | P1 | Publish approved own build contribution | Exact exported fields approved |
+| `builds:publish` | P1 | Publish approved own build contribution | Exact exported fields approved, or delegation (§10.4) |
 | `tests:submit` | P1 | Upload/read own sanitized reports and prepare result drafts | Explicit local upload consent; no inference grant |
-| `tests:publish` | P1 | Publish approved own sanitized report | Approval and evidence policy |
+| `tests:publish` | P1 | Publish approved own sanitized report | Approval or delegation (§10.4); evidence policy unchanged |
 
 Read scopes do not grant execution. There is no hosted `runtime:execute` or arbitrary-code scope. OIDC `openid`/`profile` and OAuth `offline_access` are protocol scopes, not product permissions. Advertise only implemented phase scopes and ask for the minimum needed operation.
+
+Publication delegation is deliberately not a scope. Clients choose which scopes to request, consent grants them all at once, and MCP clients commonly request every advertised scope, so a delegation scope would become a silent default. Existing `*:publish` grants keep their meaning (publish what a person approved). Delegation is a per-connection setting that only a human session can change (§10.4).
 
 ### 10.3 Permission boundaries
 
@@ -748,20 +750,25 @@ Read scopes do not grant execution. There is no hosted `runtime:execute` or arbi
 | Change runtime/load/download/install | Separate local approval for the applicable effect |
 | Save a private local report | Local file permission; no registry upload implied |
 | Upload sanitized report | User review/opt-in for the exact export and destination |
-| Publish project/build/result | Scoped registry capability plus exact-artifact human publication approval |
+| Publish project/build/result | Scoped registry capability plus either an exact-artifact human approval or the connection's publication delegation |
 | Mark independent verification | Operator-reviewed independent provenance; never a submitted flag |
 
-An OAuth connection consent grants recurring capabilities; it does not approve any future artifact or test. The backend can enforce publication approval but cannot independently prove that an arbitrary third-party agent obtained truthful human local-execution consent. The first-party runner enforces that boundary; reports remain attributed claims unless stronger provenance exists.
+An OAuth connection consent grants recurring capabilities; by itself it does not approve any future artifact or test. Publication delegation (§10.4) is the one standing authorization, and a human session enables it separately for one connection. The backend can enforce publication approval but cannot independently prove that an arbitrary third-party agent obtained truthful human local-execution consent. The first-party runner enforces that boundary; reports remain attributed claims unless stronger provenance exists.
 
-### 10.4 Exact-artifact approval
+### 10.4 Publication authorization
 
 Approval binds actor, draft kind/ID, revision, canonical payload digest, warning acknowledgements, policy version, expiry, and one-use consumption. Proposed lifetime: 30 minutes. Any content/redaction/model-binding/source/test reference edit invalidates approval. Changing derived view counters does not change artifact content.
 
 A human may deny a valid reviewable artifact without acknowledging its warnings. Denial grants no publication rights, revokes any existing unconsumed approval, and records the exact revision/digest and denial in the audit trail. Warning acknowledgement remains mandatory for approval and is rechecked during publication; denial retains the same session, ownership, lifecycle, validation, and exact-artifact checks.
 
-P0 approval is created in a trusted human browser session after showing the exact artifact; MCP cannot mint it by claiming `user_approved: true`. Contribution preparation, extraction, editing, validation, and final publication remain API/MCP operations; the browser is a minimal consent surface, not a mandatory web authoring app. The CLI can open that review URL, or record the decision itself with a linked approval device (below).
+Publication needs one of two authorizations, checked inside the publish transaction:
 
-**Linked approval device.** A person can approve from their own terminal with `contribution approve <draft-id>`. The machine is linked once with `auth approver-login`: it asks for a short code and holds a secret, a signed-in browser session approves the code, and the machine redeems the secret once for an opaque credential (`lfh_` prefix, stored as a hash, 30-day lifetime, at most 10 live per account). The credential is not an OAuth or MCP token and cannot be granted through consent. The REST adapter refuses it everywhere except reading the exact review data (`GET /drafts/:id/review`) and recording or revoking a decision (`POST`/`DELETE /drafts/:id/approval`); an unknown, revoked, or expired one is an error, never a downgrade. The approval row records the credential instead of a session, and the audit actor is `approver`. The CLI needs an interactive terminal, recomputes a project draft's payload digest from the content it displays, asks for a literal `yes` for each limitation and for the artifact, and names the exact revision and digest. Revocation is in the account page (`/account/devices`); account deletion removes devices and open links. This is weaker than the browser path: an agent with shell access on that machine can drive a pseudo-terminal, so the browser remains the default and the device is an opt-in the person creates. Publication still needs the separate publish call with its own scope, idempotency key, and single-use check.
+1. **Exact-artifact approval** (the default). A human browser session approves the exact revision and digest on `/review/drafts/:draft_id`; MCP cannot mint it by claiming `user_approved: true`. Contribution preparation, extraction, editing, validation, and final publication remain API/MCP operations; the browser is a minimal consent surface, not a mandatory web authoring app. `contribution review --open` opens that page from the CLI.
+2. **Publication delegation.** The owner lets one connection publish their own drafts without a per-artifact approval, the way a developer lets an agent push to a repository. It is off for every connection by default, and only a human session can turn it on or off: on the connection's row in `/account/connections`, or with **Approve and let <client> publish without asking** on the review page, which records the approval and enables delegation for the connection that created the draft in one step. Delegation belongs to the grant (user and OAuth client), not to a token: it survives token refresh and ends when the connection or the delegation is revoked, within the access-token and cache bounds of §10.5. A token can never change it; it only learns whether its own connection is delegated (`publication_delegated` on `GET /drafts/:id` and `draft_get`). The publish call still names the exact revision and digest and lists `acknowledged_warning_codes`; the publish transaction records a delegated approval for that revision and digest, with `authorization: delegated`, the connection, and the agent's acknowledgements, and consumes it at once, so every published version still has exactly one consumed approval. Delegation changes nothing else: ownership, the kind-specific publish scope, every §14.4 blocker except the missing approval, quarantine, idempotency, single use, the publication rate limit, and audit all still apply.
+
+Delegated publication stays visible. The published version records how it was authorized; public project and version pages say when a version was published by a connection without per-version review, showing the client's self-reported display name as unverified. The owner sees each connection's delegated publications on `/account/connections`, with an unpublish action.
+
+There is no local approval channel. The earlier linked approval device (`auth approver-login`, `contribution approve`, `lfh_` credentials, `/account/devices`) is retired. An agent running as the same OS user could answer its interactive terminal through a pseudo-terminal and read its credential from the keychain, so it neither proved a person was present nor was more convenient than delegation. Existing device credentials and open link requests are revoked when this change ships.
 
 ### 10.5 OAuth/session defaults
 
@@ -864,7 +871,7 @@ Compatibility `incompatible` and `unknown` are normal assessment outcomes, not H
 | POST | `/api/v1/drafts/:draft_id/import` | P0 | `projects:draft`; bounded explicit GitHub extraction, 202 |
 | POST | `/api/v1/drafts/:draft_id/approval` | P0/P1 | Human; exact payload/revision/digest/warning approval |
 | DELETE | `/api/v1/drafts/:draft_id/approval` | P0/P1 | Human; revoke exact approval |
-| POST | `/api/v1/drafts/:draft_id/publish` | P0/P1 | Kind-specific publish scope + human approval, immutable artifact |
+| POST | `/api/v1/drafts/:draft_id/publish` | P0/P1 | Kind-specific publish scope + human approval or connection delegation (§10.4), immutable artifact |
 | DELETE | `/api/v1/drafts/:draft_id` | P0/P1 | Kind-specific write scope; discard own nonterminal draft |
 | POST | `/api/v1/projects/:project_id/drafts` | P0 | `projects:draft` + `projects:update`; owned version-update draft |
 | POST | `/api/v1/projects/:project_id/unpublish` | P0 | `projects:update`; owned visibility change |
@@ -918,8 +925,10 @@ There is no hosted `/runtime/discover`, `/inference`, `/tests/execute`, localhos
 | Method | Route | Phase | Access / contract |
 | --- | --- | --- | --- |
 | GET | `/api/v1/me` | P0 | `profile:read`; safe own profile/account state |
-| GET | `/api/v1/me/connections` | P0 | Human; owned agent grant summaries, no token bodies |
-| DELETE | `/api/v1/me/connections/:connection_id` | P0 | Human; revoke grant using auth-provider lifecycle |
+| GET | `/api/v1/me/connections` | P0 | Human; owned agent grant summaries, publication delegation state and delegated publications, no token bodies |
+| DELETE | `/api/v1/me/connections/:connection_id` | P0 | Human; revoke grant using auth-provider lifecycle; also ends its delegation |
+| PUT | `/api/v1/me/connections/:connection_id/publication-delegation` | P0 | Human; enable delegation for that grant; audited |
+| DELETE | `/api/v1/me/connections/:connection_id/publication-delegation` | P0 | Human; disable delegation; published versions are unchanged |
 | POST | `/api/v1/me/deletion-requests` | P0 | Human with recent authentication; confirmed private/public effects |
 | GET | `/api/v1/operations/:operation_id` | P0/P1 | Owner + relevant scope, or operator; safe status only |
 | GET | `/api/v1/admin/reviews` | P0/P1 | Operator; source/claim/moderation/evidence queue |
@@ -952,7 +961,7 @@ There is no hosted `/runtime/discover`, `/inference`, `/tests/execute`, localhos
 
 The angle-bracket strings are placeholders for literal document text, not valid publication payloads. Direct draft creation is synchronous `201` unless async source validation is needed. Git import instead uses `source_import: {provider, repository_url, ref, manifest_path}` and returns `202`; resolve ref once. Generated draft response includes ID, revision/ETag, validation issues, normalized manifest/payload digest, provenance, and review URL.
 
-**Approve/publish:** human approval body contains `draft_revision`, `payload_digest`, `acknowledged_warning_codes`, and decision. Publish body contains approval ID, same revision/digest; requires idempotency key. Response returns artifact kind/ID/version, visibility/review state, and URL; never automatically assigns run verification. Missing/expired approval or stale revision is an explicit conflict.
+**Approve/publish:** human approval body contains `draft_revision`, `payload_digest`, `acknowledged_warning_codes`, decision, and optional `delegate_connection: true`, which also enables delegation for the connection that created the draft (drafts record their creating connection). Publish body contains the approval ID or, for a delegated connection, `acknowledged_warning_codes` instead; the same revision/digest; and an idempotency key. Response returns artifact kind/ID/version, how publication was authorized, visibility/review state, and URL; never automatically assigns run verification. A missing/expired approval without delegation, an unacknowledged warning, or a stale revision is an explicit conflict.
 
 **Compatibility query:** project version/configuration key, requirements, and optional minimal hardware/selected-model/runtime summary. Unknown critical fields are returned as unknown. Raw inventory, endpoint credentials, prompts, and document contents are rejected. The selected-model summary is voluntarily shared; otherwise assess locally from public specification data.
 
@@ -983,10 +992,10 @@ Wire names use underscores; semantic documentation may use dots. Register one na
 | `project_get` | P0 | Project ID or slug, optional version | Spec, provenance, model/runtime/hardware links, test declaration and availability; projects:read |
 | `project_check_compatibility` | P0 | Project version/config key, requirements, optional explicitly shared minimal environment/model summary | Section 9 assessment; no local probe; projects:read |
 | `contribution_create_draft` | P0/P1 | Kind plus direct PROJECT.md/files or import descriptor; P1 owned build/result reference and proposed public fields; idempotency key | Draft/operation IDs/revision/review URL; kind-specific write scope, update scope for an existing project |
-| `draft_get` | P0/P1 | Draft ID | Owned content/validation/approval/operation; kind-specific write scope |
+| `draft_get` | P0/P1 | Draft ID | Owned content/validation/approval/operation and whether this connection may publish without approval; kind-specific write scope |
 | `draft_update` | P0/P1 | Draft ID, expected_revision, bounded editable patch | New revision/digest, revoked approval; kind-specific write scope |
 | `draft_validate` | P0/P1 | Draft ID, expected_revision | Issues/warnings, ready state; kind-specific write scope |
-| `contribution_publish` | P0/P1 | Draft ID, approval ID, revision/digest, idempotency key | Published immutable artifact and review/evidence state; kind-specific publish scope |
+| `contribution_publish` | P0/P1 | Draft ID, revision/digest, idempotency key, and the approval ID or, for a delegated connection, acknowledged warning codes | Published immutable artifact, how it was authorized, and review/evidence state; kind-specific publish scope |
 | `test_get` | P1 | Project version/test key or test ID | Immutable manifest/public fixtures/digests, supported scope; projects:read |
 | `test_plan_local` | P1 | Test ID and target runtime family/profile | Generic local plan template, capability requirements, consent/resource effects; projects:read; no execution |
 | `build_save` | P1 | Actual sanitized build config, optional manual_report, idempotency key | Private build/report IDs, fingerprint/reproducibility gaps; builds:write |
@@ -1002,7 +1011,7 @@ Wire names use underscores; semantic documentation may use dots. Register one na
 | `community_list` | P2 | Kind, optional project filter and cursor/limit | Accepted public attributed community records; projects:read |
 | `test_get_verifications` | P2 | Report ID | Separate independent decision provenance and active/revoked/ineligible history; projects:read |
 
-`contribution_create_draft` accepts only kind `project` in P0 and adds `build` and `test_result` in P1. Both API and MCP expose preparation, editing, validation, and publication of every implemented contribution kind. The human approval boundary is explicit; there is no hidden website-only authoring dependency.
+`contribution_create_draft` accepts only kind `project` in P0 and adds `build` and `test_result` in P1. Both API and MCP expose preparation, editing, validation, and publication of every implemented contribution kind. Publication authorization is explicit: an exact human approval, or a delegation the owner enabled for this connection (§10.4). There is no hidden website-only authoring dependency.
 
 There is no hosted `local_runtime_discover`, `test_run`, or code-execution tool. A user's existing agent invokes the first-party local CLI where it has local permissions. Optional local stdio tools in a future runner are a different server and capability boundary.
 
@@ -1062,9 +1071,9 @@ Return correct MIME type, size/digest/revision, provenance, and phase/runner sup
 2. Agent proposes a portable specification; marks unknown/conflicting model/runtime/hardware/license facts.
 3. Agent submits direct text/files or a bounded source import descriptor through API/MCP.
 4. Server validates/extracts without execution, stores a private draft, and returns provenance/errors/revision.
-5. Agent edits and validates; user previews exact artifact and warnings.
-6. Trusted approval records exact actor/kind/revision/digest/policy with short expiry.
-7. Scoped publication consumes approval, inserts immutable version, updates current pointer, and writes audit/outbox in one transaction.
+5. Agent edits and validates; unless the connection is delegated, the user previews the exact artifact and warnings.
+6. Authorization: the user approves the exact artifact in the browser (actor/kind/revision/digest/policy, short expiry), or the connection holds the owner's publication delegation (§10.4).
+7. Scoped publication consumes the approval (a delegated one is recorded and consumed in the same transaction), inserts immutable version, updates current pointer, and writes audit/outbox in one transaction.
 8. Indexing exposes safe public records. No run evidence is created merely by publication.
 
 For hardware/documentation projects, the canonical snapshot is the specification content and supplied source references; missing Git commit is not a publication error. Unknown external source content means unpinned documentation, not independently reproducible code. Metadata generation through an agent does not grant authorship of upstream material.
@@ -1085,7 +1094,7 @@ The source-runner `bakery-holiday` example demonstrates an authored workflow der
 
 ### 14.4 Publication and plan blockers
 
-Block publication for secrets, invalid schema/references, missing author attribution, prohibited content, unapproved warning set, stale/absent approval, or quarantine. A direct documentation URL's public status can be declared/unverified when the backend has not fetched it; make that state visible and reject credentialed/private-network/secret-bearing links. Unknown license/identity facts may permit limited documentation, but not unsupported commercial-use, auto-download, or reproducibility claims.
+Block publication for secrets, invalid schema/references, missing author attribution, prohibited content, unacknowledged warning set, stale or absent approval for a connection without delegation, or quarantine. A direct documentation URL's public status can be declared/unverified when the backend has not fetched it; make that state visible and reject credentialed/private-network/secret-bearing links. Unknown license/identity facts may permit limited documentation, but not unsupported commercial-use, auto-download, or reproducibility claims.
 
 Executable setup plans are P2 beyond the P1 bounded task harness. They require pinned repository/document artifacts, model/container identities where downloading, dependency locks, command previews, resource/privilege/network effects, and a separate local approval. A pure local task using an already installed model can run with an identity warning; it must not invent a model digest or silently download a replacement. Expired or changed plans are rechecked locally; quarantine blocks new plan issuance.
 
@@ -1128,7 +1137,7 @@ Seed five Jetson/edge entries with `curated_from_upstream`, original authors, ex
 | `projects`, `project_versions` | P0 | Stable listings and immutable specifications/content digests/current pointer |
 | `source_references`, `attributions` | P0 | Multiple source entries/authors per project version; optional repo identity/path |
 | `model_references`, `runtime_references`, `hardware_descriptors` | P0 | Small normalized deduplication/filter keys with validated JSON details; no separate marketplaces |
-| `drafts`, `publication_approvals`, `claim_requests` | P0 | Kind/revision/source-generation, exact-artifact authorization, audited claims |
+| `drafts`, `publication_approvals`, `publication_delegations`, `claim_requests` | P0 | Kind/revision/source-generation/creating connection, exact-artifact or delegated authorization, per-connection delegation state, audited claims |
 | `operations`, `outbox_events`, `idempotency_records`, `audit_events` | P0 | Durable work, replay safety, minimal event history |
 | `search_documents`, shared rate-limit storage | P0 | Indexed projection and bounded abuse controls |
 | `build_configurations`, normalized model-version bindings | P1 | Actual immutable selections/deviations; user-approved hardware summary |
@@ -1175,7 +1184,8 @@ Review SQL migrations generated from Drizzle/auth schemas. One release migration
 | --- | --- |
 | Wrong-service/token passthrough | Exact issuer/resource checks; upstream tokens never exposed or accepted |
 | Agent scope escalation | Narrow phase scopes, human consent, service-level ownership/state policy |
-| False human approval | Session-only exact-artifact approval; expiry, edit invalidation, one-use transaction |
+| False human approval | Session-only exact-artifact approval and delegation changes; no local or token-based approval channel; expiry, edit invalidation, one-use transaction |
+| Unwanted publication by a delegated agent | Off by default per connection; enabled only in a human session and revocable; every publication blocker still applies; public label on delegated versions; owner activity list and unpublish; publication rate limit |
 | False local-execution consent | First-party runner grant checks; distinguish reported assertions from trusted local enforcement |
 | Local/cloud inference confusion | Selected-model locality preflight; reject known/unknown remote execution for local-only tests; no cloud fallback |
 | Localhost exposure or unsafe redirect | Explicit loopback endpoints, no network scanning, credential isolation, redirect/proxy restrictions |
@@ -1315,7 +1325,7 @@ These are future implementation checks, not tests already executed. Documentatio
 
 ### 20.1 P0 registry and authorization
 
-- Actual tested MCP client can log in, discover, create/edit/validate/export a specification, obtain human artifact approval, and publish/retrieve the exact version.
+- Actual tested MCP client can log in, discover, create/edit/validate/export a specification, obtain human artifact approval, and publish/retrieve the exact version; with delegation enabled for that connection, it publishes without a per-version approval.
 - The same service behavior exists through REST; MCP/API output schemas agree.
 - A hardware/documentation project publishes without a GitHub repository or commit and shows its actual source pinning limits.
 - No web form reconstruction is required; browsing/approval/auth do not become the only contribution interface.
@@ -1323,7 +1333,8 @@ These are future implementation checks, not tests already executed. Documentatio
 - Model/hardware/runtime filters connect project records and respect visibility.
 - Wrong token/audience/issuer/expiry/signature/scope, ID-token misuse, and GitHub-token passthrough fail.
 - Invalid bearer plus valid cookie cannot bypass rejection; ownership checks cover resources/jobs/replayed private results.
-- Missing/expired approval, stale revision, changed redaction, or spoofed approval flag prevents publication.
+- Without delegation, a missing/expired approval, stale revision, changed redaction, or spoofed approval flag prevents publication; with delegation, a stale revision or unacknowledged warning still does.
+- A token cannot enable or disable delegation or see another connection's state. Revoking the connection or its delegation stops delegated publication within the §10.5 bounds, and delegated versions are labeled publicly.
 - Concurrent edit/publish and idempotent retry create one correct immutable version, approval consumption, and audit/outbox.
 - Quarantine cannot be bypassed through cached search, update, republish, or a new draft of the same prohibited content.
 - Source retrieval does not execute code; unsafe YAML/Markdown/paths/secret fixtures are rejected or safely rendered.
@@ -1545,7 +1556,8 @@ Development deliverables: documented Node/PostgreSQL setup, `.env.example` witho
 | LM Studio application/CLI/engine version detection | Preserve distinct unknowns; validate concrete version paths in adapter spike |
 | Model identity with custom aliases/missing artifact hashes | Permit local experiment with warning, limit shared reproducibility eligibility |
 | Locality/egress instrumentation per OS/runtime | Fail closed on unknown locality; no offline badge without runtime-inclusive method; `no_route_observed` is self-reported interface sampling, not a badge |
-| Local-only trusted artifact approval | Resolved for a linked terminal (§10.4): browser-approved device credential, interactive terminal, exact digest. A mechanism with no browser step at all stays out of scope |
+| Local-only trusted artifact approval | Resolved: no local approval channel. A person approves in the browser or delegates publication to one connection (§10.4); the linked terminal device is retired |
+| Owner notification for delegated publications | `/account/connections` activity list at launch; email or another push channel once the service has outbound notifications |
 | Reviewer independence, staffing, and criteria | Versioned policy v0.1 and human operator workflow; external affiliations/author aliases and staffing require operational review |
 | Isolation/device access for custom/multimodal harnesses | Deferred P2, per-platform threat/evaluation gates |
 | Model/source/license eligibility for automatic setup | Documentation may be incomplete; executable paths require reviewed policy |
@@ -1569,6 +1581,7 @@ Development deliverables: documented Node/PostgreSQL setup, `.env.example` witho
 | ADR-011 | Modular backend/API/worker; PostgreSQL outbox/queue; no graph service at launch | Retained proposed default |
 | ADR-012 | Integrator/SaaS/support-marketplace foundation retired | Superseded scope |
 | ADR-013 | npm package and CLI executable are named localfirstdotsh | Accepted user direction |
+| ADR-014 | An owner can delegate publication to one connection; the linked terminal approval device is retired | Accepted 2026-10-23 |
 
 No v0.1 deployed API/schema is assumed; implementation begins from reviewed v0.2 documentation. If external consumers later exist, publish a migration/compatibility policy before breaking their schema.
 

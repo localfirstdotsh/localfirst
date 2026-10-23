@@ -14,6 +14,7 @@ import {
   testSupportSummary,
 } from '../../../lib/format';
 import { loadProject } from '../../../features/projects/project-loader';
+import { delegationLabel } from '../../../features/projects/publication-label';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +49,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
   const current = project.current_version;
   const exportUrl = `${publicApiUrl()}/api/v1/projects/${encodeURIComponent(project.project_id)}/export?version=${encodeURIComponent(current.project_version_id)}`;
   const base = `/projects/${encodeURIComponent(project.slug)}`;
+  const delegated = delegationLabel(current.publication, project.manager.handle);
 
   return (
     <PageContainer gap={32} top="detail">
@@ -71,6 +73,7 @@ export default async function ProjectPage({ params }: { params: Params }) {
             <Link href={`${base}/versions`}>All versions</Link> ·{' '}
             <Link href={`${base}/versions/${encodeURIComponent(current.project_version_id)}`}>View specification</Link>
           </p>
+          {delegated && <p className="small muted">{delegated}</p>}
         </div>
         <div className="stack gap-8 project-export">
           <a href={exportUrl} className="button button-primary" download>

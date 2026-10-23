@@ -216,6 +216,8 @@ export interface RequestOptions {
   user?: string;
   scopes?: string[];
   actorKind?: 'session' | 'token';
+  /** The OAuth client a `token` actor belongs to (defaults to `dev-client`). */
+  client?: string;
   idempotencyKey?: string;
   ifMatch?: string;
 }
@@ -231,6 +233,7 @@ export async function request(
   if (options.user) headers.set('x-dev-user', options.user);
   if (options.scopes) headers.set('x-dev-scopes', options.scopes.join(' '));
   if (options.actorKind === 'token') headers.set('x-dev-actor', 'token');
+  if (options.client) headers.set('x-dev-client', options.client);
   if (options.idempotencyKey) headers.set('idempotency-key', options.idempotencyKey);
   if (options.ifMatch) headers.set('if-match', options.ifMatch);
 

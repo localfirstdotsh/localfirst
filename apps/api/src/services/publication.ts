@@ -44,13 +44,17 @@ import { writeSearchDocument } from './search.js';
 import { writeAudit } from './audit.js';
 import { emitEvent } from './outbox.js';
 import { enqueueJob } from './jobs.js';
+import { clientDisplayName, recordDelegatedApproval } from './delegation.js';
 
 export interface PublishInput {
   actor: Actor;
   draftId: string;
-  approvalId: string;
+  /** A person's approval, or null when a delegated connection publishes without one (section 10.4). */
+  approvalId: string | null;
   draftRevision: number;
   payloadDigest: string;
+  /** Required instead of an approval: the delegated connection acknowledges each warning itself. */
+  acknowledgedWarningCodes?: string[];
 }
 
 export interface PublishResult {
@@ -67,6 +71,7 @@ export interface PublishResult {
   url: string;
   published_at: string;
   warning_codes: string[];
+  publication_authorization: 'human' | 'delegated';
 }
 
 function parseGitHubSource(url: string | null): {
@@ -111,19 +116,14 @@ export async function publishProjectDraft(input: PublishInput): Promise<PublishR
         details: { published_version_id: draft.publishedVersionId },
       });
     }
-    if (draft.state !== 'approved') {
+    const delegated = input.approvalId === null;
+    if (!delegated && draft.state !== 'approved') {
       throw new ApiError({
         code: ERROR_CODES.APPROVAL_REQUIRED,
         message: 'This draft has no live human approval of its exact current artifact.',
         details: { state: draft.state },
       });
     }
-
-    const [approval] = await tx
-      .select()
-      .from(publicationApprovals)
-      .where(eq(publicationApprovals.id, input.approvalId))
-      .for('update');
 
     if ((draft.manifest as ProjectSpec | null)?.derivative_of) {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended('derivative-lineage', 0))`);
@@ -145,6 +145,19 @@ export async function publishProjectDraft(input: PublishInput): Promise<PublishR
       });
     }
 
+    const approvalId = input.approvalId ?? await recordDelegatedApproval(tx, {
+      actor: input.actor,
+      draft,
+      warningCodes: validation.warning_codes,
+      acknowledgedWarningCodes: input.acknowledgedWarningCodes ?? [],
+      draftRevision: input.draftRevision,
+      payloadDigest: input.payloadDigest,
+    });
+    const [approval] = await tx
+      .select()
+      .from(publicationApprovals)
+      .where(eq(publicationApprovals.id, approvalId))
+      .for('update');
     assertApprovalUsable(
       approval,
       {
@@ -155,12 +168,13 @@ export async function publishProjectDraft(input: PublishInput): Promise<PublishR
         warningCodes: validation.warning_codes,
       },
       {
-        approvalId: input.approvalId,
+        approvalId,
         draftRevision: input.draftRevision,
         payloadDigest: input.payloadDigest,
       },
       actorUserId,
     );
+    const viaClientName = delegated && approval?.clientId ? await clientDisplayName(tx, approval.clientId) : null;
 
     const spec = validation.spec;
     const derived = validation.derived;
@@ -232,7 +246,9 @@ export async function publishProjectDraft(input: PublishInput): Promise<PublishR
           warningCodes: validation.warning_codes,
           publishedByUserId: actorUserId,
           publishedFromDraftId: draft.id,
-          approvalId: input.approvalId,
+          approvalId,
+          publicationAuthorization: delegated ? 'delegated' : 'human',
+          publishedViaClientName: viaClientName,
         })
         .returning({ id: projectVersions.id });
       if (!version) throw ApiError.internal('The version could not be created.');
@@ -270,7 +286,7 @@ export async function publishProjectDraft(input: PublishInput): Promise<PublishR
     const consumed = await tx
       .update(publicationApprovals)
       .set({ consumedAt: publishedAt })
-      .where(and(eq(publicationApprovals.id, input.approvalId), isNull(publicationApprovals.consumedAt)))
+      .where(and(eq(publicationApprovals.id, approvalId), isNull(publicationApprovals.consumedAt)))
       .returning({ id: publicationApprovals.id });
     if (consumed.length === 0) {
       // Another concurrent publication consumed this single-use approval.
@@ -329,7 +345,8 @@ export async function publishProjectDraft(input: PublishInput): Promise<PublishR
       metadata: {
         project_id: projectId,
         draft_id: draft.id,
-        approval_id: input.approvalId,
+        approval_id: approvalId,
+        authorization: delegated ? 'delegated' : 'human',
         version_number: versionNumber,
         content_digest: validation.content_digest,
         payload_digest: draft.payloadDigest,
@@ -351,6 +368,7 @@ export async function publishProjectDraft(input: PublishInput): Promise<PublishR
       url: `${config().apiBaseUrl}/api/v1/projects/${projectId}`,
       published_at: publishedAt.toISOString(),
       warning_codes: validation.warning_codes,
+      publication_authorization: delegated ? 'delegated' : 'human',
     };
   });
 }

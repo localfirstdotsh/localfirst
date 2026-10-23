@@ -27,8 +27,6 @@ const TABLES = [
   'operations',
   'claim_requests',
   'publication_approvals',
-  'approver_credentials',
-  'approver_links',
   'drafts',
   'source_drift_checks',
   'source_references',
