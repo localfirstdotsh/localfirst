@@ -38,9 +38,9 @@ browserRoutes.get('/config', (c) => c.json(success(browserConfig(), c.get('reque
 /** Whether this browser holds a signed-in session, so the site header can show the right control. Nothing else is exposed. */
 browserRoutes.get('/session', async (c) => {
   const actor = c.get('actor');
-  if (actor.kind !== 'session') return c.json(success({ authenticated: false, handle: null }, c.get('requestId')));
+  if (actor.kind !== 'session') return c.json(success({ authenticated: false, handle: null, auth_base_path: config().authBasePath }, c.get('requestId')));
   const [profile] = await db().select({ handle: userProfiles.handle }).from(userProfiles).where(eq(userProfiles.userId, actor.userId)).limit(1);
-  return c.json(success({ authenticated: true, handle: profile?.handle ?? null }, c.get('requestId')));
+  return c.json(success({ authenticated: true, handle: profile?.handle ?? null, auth_base_path: config().authBasePath }, c.get('requestId')));
 });
 browserRoutes.get('/consent', async (c) => {
   const url = new URL(c.req.url);
