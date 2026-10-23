@@ -1,6 +1,6 @@
 .browser-identity, .browser-permissions { min-width: 0; overflow-wrap: anywhere; }
 
-.page-width-auth { max-width:24rem; margin:48px auto; padding:32px 28px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); }
+.page-width-auth { max-width:34rem; margin:48px auto; padding:32px 28px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); }
 .page-width-auth .page-header { text-align:center; }
 .page-width-auth h1 { font-size:var(--text-state-page); }
 .page-width-auth .button-primary { width:100%; min-height:52px; border-color:transparent; border-radius:var(--radius-lg); box-shadow:-4px -4px 12px rgb(255 255 255 / .06), 6px 6px 14px rgb(0 0 0 / .65); transition:box-shadow .15s ease; }
