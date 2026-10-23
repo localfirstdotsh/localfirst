@@ -53,7 +53,7 @@ export async function projectExport(env: CliEnv, argv: string[]): Promise<number
   } catch (cause) {
     if (cause instanceof RegistryError) throw new CliError(`Export failed (${cause.code ?? cause.status}): ${cause.message}`, EXIT.failed);
     if ((cause as NodeJS.ErrnoException).code === 'EEXIST') {
-      throw new CliError('PROJECT.md already exists in the output directory; choose another --out.', EXIT.failed);
+      throw new CliError('The output directory already holds a bundle file (PROJECT.md, a test file, or .localfirst-bundle.json); choose another --out.', EXIT.failed);
     }
     throw cause;
   }
