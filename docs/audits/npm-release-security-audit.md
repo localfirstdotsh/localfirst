@@ -4,7 +4,7 @@
 |---|---|
 | Package | `localfirstdotsh` (source `packages/runner/`), version `0.1.0` on `dev`; `0.1.0-beta.0` on the unmerged `chore/npm-beta-release` branch |
 | Audited code | `origin/dev` at `155f1c7`, plus the release branch `origin/chore/npm-beta-release` at `c1f0a23` (reviewed read-only) |
-| Fixes | Branch `fix/npm-release-security-audit` (from `origin/dev`), uncommitted at the time of writing |
+| Fixes | Branch `fix/npm-release-security-audit` (from `origin/dev`); merged into `dev` in #48 and promoted to `staging` in #52 (2026-10-23) |
 | Date | 2026-10-23 |
 | Later change | The approval device was retired after this audit (`refactor/retire-approval-device`, BACKEND_PRD ADR-014): `auth approver-login` and `contribution approve` no longer exist. That resolves R-1, and LF-01's fix now protects `contribution review` output and registry errors only. |
 | Method | Source review of every runner module and the contracts it vendors, tarball inspection, adversarial regression tests, a clean-consumer install, dependency audit, git-history credential scan, and a read-only review of GitHub and npm settings |
@@ -214,7 +214,7 @@ In priority order:
 
 1. [ ] **LF-04:** create the `npm` GitHub environment with a required reviewer and a deployment policy for `localfirstdotsh-v*` tags. Add a mandatory tag ruleset for `localfirstdotsh-v*` that restricts creation, update and deletion. After the bootstrap publish, configure the npm trusted publisher (`release.yml`, environment `npm`) and set "require 2FA and disallow tokens". The repository-settings changes need the owner.
 2. [ ] **LF-07:** merge `chore/npm-beta-release` through `dev` and `staging` before any publish, so the packed manifest no longer names `@localfirst/contracts`. That also brings `release.yml`, the version bump and the stricter `test-package.mjs`.
-3. [ ] Merge this branch's fixes (LF-01 to LF-03) through `dev` and `staging` before the bootstrap publish, and rerun `pnpm check` and `test:package` on the commit that will be published.
+3. [ ] Merge this branch's fixes (LF-01 to LF-03) through `dev` and `staging` before the bootstrap publish (done: #48, #52), and rerun `pnpm check` and `test:package` on the commit that will be published (open).
 4. [ ] For the bootstrap publish, made by hand in runbook step 3: use a clean detached worktree and an npm account with 2FA, then confirm the dist-tags with `npm view localfirstdotsh dist-tags`. npm points `latest` at the first beta.
 
 Recommended before the first stable `latest` release (not blocking a beta): LF-05 (pin actions to SHAs) and LF-06 (narrow the publish-job install).
