@@ -141,10 +141,17 @@ projects:
               # edge sets or overwrites is found, every visitor shares the website's one allowance
               # (docs/operations/RUNBOOK.md "Staging on Render", step 5). Removing a key here does not
               # delete it from the service: delete it in the dashboard too.
-              # Setup instructions appear only when the CLI is released and tested. Until then
-              # the site says it is not available yet. Do not set these early:
-              #   LOCALFIRST_CLI_RELEASED, LOCALFIRST_CLI_VERSION,
-              #   LOCALFIRST_CLI_SETUP_COMMAND, LOCALFIRST_TESTED_CLIENTS
+              # The released CLI (npm `localfirstdotsh`, `beta` dist-tag). Without these the site
+              # shows the build-from-source commands. `@beta` follows each new beta, so these need
+              # no change per release; drop it when the first stable version takes `latest`.
+              # Every command targets this environment's public origin (LOCALFIRST_PUBLIC_API_URL).
+              # LOCALFIRST_CLI_VERSION is unset: nothing displays it, and it would go stale.
+              - key: LOCALFIRST_CLI_RELEASED
+                value: 'true'
+              - key: LOCALFIRST_CLI_SETUP_COMMAND
+                value: npx localfirstdotsh@beta mcp add --client claude-code --registry https://staging.localfirst.sh
+              - key: LOCALFIRST_TESTED_CLIENTS
+                value: '[{"id":"claude-code","label":"Claude Code","command":"npx localfirstdotsh@beta mcp add --client claude-code --registry https://staging.localfirst.sh"},{"id":"codex","label":"Codex CLI","command":"npx localfirstdotsh@beta mcp add --client codex --registry https://staging.localfirst.sh"},{"id":"gemini-cli","label":"Gemini CLI","command":"npx localfirstdotsh@beta mcp add --client gemini-cli --registry https://staging.localfirst.sh"}]'
 
           - type: worker
             name: localfirst-staging-worker

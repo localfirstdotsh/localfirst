@@ -100,6 +100,13 @@ authentication (required by `npm trust` and by manual publishing) and npm ≥ 11
 GitHub: admin on `localfirstdotsh/localfirst` for the one-time settings, write access
 to push tags.
 
+**Run npm account commands in an interactive terminal.** `npm login`, `npm publish`,
+`npm access grant|set` and `npm trust` (even `npm trust list`) stop for browser
+approval. Without a TTY (an agent's shell, a pasted `!` command, CI) `npm login` waits
+at `Username:` and the others exit with `EOTP`. Use `npm login --auth-type=web`, and
+always pass the package name: from the repository root, npm otherwise targets the root
+package, `localfirst-monorepo`, and returns 404.
+
 ### One-time setup
 
 1. **GitHub environment.** Settings → Environments → New environment `npm`. Add
@@ -123,9 +130,14 @@ to push tags.
    ```
 
    This one version has no provenance statement (that needs CI); every later
-   version does. Because the package has no `latest` yet, npm also points
-   `latest` at this first version; check with `npm view localfirstdotsh dist-tags`.
-   Later betas never move `latest`, and the first stable release takes it over.
+   version does. npm processes a new package first: for a minute or two the
+   registry holds only a placeholder, `0.0.0-stage` ("Temporary package placeholder
+   for staged publishing"), with `latest` on it, and `npm view` of the real version
+   404s. Wait for it rather than publishing again. The placeholder stays in the
+   version list afterwards and nothing points at it. Because the package has no other
+   `latest`, npm then points `latest` at this first version; check with
+   `npm view localfirstdotsh dist-tags`. Later betas never move `latest`, and the
+   first stable release takes it over.
 4. **Org access, trusted publisher, token lockdown.**
 
    ```sh
@@ -137,9 +149,19 @@ to push tags.
 
    The web equivalent is npmjs.com → `localfirstdotsh` → Settings → Trusted
    Publisher: GitHub Actions, organization `localfirstdotsh`, repository
-   `localfirst`, workflow `release.yml`, environment `npm`. Then, on the same page,
-   set Publishing access to "Require two-factor authentication and disallow tokens";
-   trusted publishing keeps working.
+   `localfirst`, workflow `release.yml`, environment `npm`. `npm trust list` should
+   show exactly that, with permissions `publish, stage publish`.
+
+   Then require two-factor authentication and disallow tokens for publishing;
+   trusted publishing keeps working:
+
+   ```sh
+   npm access set mfa=publish localfirstdotsh
+   ```
+
+   (`mfa=automation` would still allow tokens.) The registry does not return this
+   setting to the CLI, so check it on the package's access page,
+   `https://www.npmjs.com/package/localfirstdotsh/access`.
 5. Optionally record the bootstrap version with a tag
    (`git tag -a localfirstdotsh-v0.1.0-beta.0 origin/staging -m "localfirstdotsh 0.1.0-beta.0"`
    and push it). The Release run it starts stops at the already-published check, by design.
@@ -165,7 +187,10 @@ Set the version to the plain `X.Y.Z` the betas led up to
 (`npm version 0.1.0 --no-git-tag-version`), PR it into `dev`, promote through
 `staging` to `main` with the usual authorization, then tag the `main` commit
 (`localfirstdotsh-v0.1.0`) and approve the run. A stable version is always its own
-publish from `main`; `latest` is not moved onto a beta.
+publish from `main`; `latest` is not moved onto a beta. The websites' setup commands
+(`LOCALFIRST_CLI_SETUP_COMMAND` and `LOCALFIRST_TESTED_CLIENTS` in `render.yaml`)
+name `localfirstdotsh@beta`: drop `@beta` for an environment that should offer the
+stable version.
 
 ### Verify a published version
 

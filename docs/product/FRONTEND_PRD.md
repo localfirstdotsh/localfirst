@@ -202,7 +202,7 @@ Package/executable name is `localfirstdotsh`. The implemented client-specific fo
 npx localfirstdotsh mcp add --client claude-code --registry <configured-registry-origin>
 ```
 
-The CLI implements `--client claude-code`, `--client codex`, and `--client gemini-cli`; a client and registry are required (the latter via `--registry` or `LOCALFIRST_REGISTRY`). Display the `npx` form only when this deployment explicitly confirms a released, tested package. Before publication, show `node packages/runner/dist/cli/bin.js mcp add --client … --registry …` from the built checkout and link to build prerequisites. Preserve exact command text and package provenance; do not derive flags from labels.
+The CLI implements `--client claude-code`, `--client codex`, and `--client gemini-cli`; a client and registry are required (the latter via `--registry` or `LOCALFIRST_REGISTRY`). Display the `npx` form only when this deployment explicitly confirms a released, tested package. While only prereleases exist, the form names the dist-tag, `npx localfirstdotsh@beta mcp add …`, so it follows each new beta. Before publication, and on deployments that do not confirm a release, show `node packages/runner/dist/cli/bin.js mcp add --client … --registry …` from the built checkout and link to build prerequisites. Preserve exact command text and package provenance; do not derive flags from labels.
 
 | Release state | UI behavior |
 | --- | --- |
