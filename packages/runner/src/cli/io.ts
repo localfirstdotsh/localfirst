@@ -14,6 +14,20 @@ export interface Io {
   readSecret(prompt: string): Promise<string>;
 }
 
+// C0 controls except tab and newline, DEL, C1 controls (including the 8-bit CSI),
+// and invisible format characters: zero-width, bidirectional, line separators, BOM.
+// eslint-disable-next-line no-control-regex
+const UNSAFE_FOR_TERMINAL = /[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/g;
+
+/**
+ * Text from outside this CLI (a registry, a draft author) made safe to print:
+ * every character that could move the cursor, recolor, or hide text is shown
+ * as a visible `\u{XXXX}` escape, so what a person reads is what was sent.
+ */
+export function terminalSafe(text: string): string {
+  return text.replace(UNSAFE_FOR_TERMINAL, (char) => `\\u{${char.charCodeAt(0).toString(16).padStart(4, '0')}}`);
+}
+
 /** Require a terminal for an interactive approval; there is no flag or variable that bypasses this. */
 export function requireTty(io: Io, what: string): void {
   if (!io.isTTY) {
