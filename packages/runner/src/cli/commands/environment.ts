@@ -7,7 +7,7 @@ import {
 } from '@localfirst/contracts';
 import { LocalBundleSource, validateBundle, writeBundleDir, type BundleMeta } from '../bundle.js';
 import { fetchRegistryBundle, registryMeta } from '../registry-source.js';
-import { RegistryClient } from '../registry.js';
+import { RegistryClient, parseRegistryOrigin } from '../registry.js';
 import { parse, str, registryOrigin, hexOf } from './common.js';
 import { requireTty } from '../io.js';
 import { authorizeDiscovery, makeAdapter, parseFamily, resolveEndpoint, engineForFormat } from '../runtime.js';
@@ -190,7 +190,9 @@ export async function environmentRun(env: CliEnv, argv: string[]): Promise<numbe
   if (plan.data_class === 'private_local' && digestOf(effective.environment) !== plan.private_environment_digest) throw refusal('Private environment changed after planning.');
   if (plan.bindings.some(b => b.runtime_model_id !== plan.bindings[0]!.runtime_model_id)) throw refusal('This profile requires one shared model.');
   if (bundle.meta?.registry_origin && values.offline !== true) {
-    const definition = plan.test.definition_id ? await new RegistryClient(bundle.meta.registry_origin, env.fetch).testDefinition(plan.test.definition_id) : null;
+    // The provenance file is not covered by the bundle digest, so its origin gets the same check as --registry.
+    const origin = parseRegistryOrigin(bundle.meta.registry_origin);
+    const definition = plan.test.definition_id ? await new RegistryClient(origin, env.fetch).testDefinition(plan.test.definition_id) : null;
     if (!definition || definition.bundle_digest !== plan.bundle_digest || !definition.runner_available) throw refusal('Registry definition is unavailable or changed.');
   } else env.io.out('Registry freshness was not checked; this does not establish offline verification.\n');
   requireTty(env.io, 'Running an environment');

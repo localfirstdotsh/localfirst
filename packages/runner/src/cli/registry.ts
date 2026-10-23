@@ -1,4 +1,5 @@
 import { CliError, EXIT } from './errors.js';
+import { terminalSafe } from './io.js';
 
 const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -162,8 +163,8 @@ export class RegistryClient {
     try {
       const body = JSON.parse(text) as { error?: { code?: unknown; message?: unknown } };
       const code = typeof body.error?.code === 'string' ? body.error.code : null;
-      const message = typeof body.error?.message === 'string' ? body.error.message : `Registry answered ${status}.`;
-      return new RegistryError(status, code, message);
+      const message = typeof body.error?.message === 'string' ? terminalSafe(body.error.message) : `Registry answered ${status}.`;
+      return new RegistryError(status, code === null ? null : terminalSafe(code), message);
     } catch {
       return new RegistryError(status, null, `Registry answered ${status}.`);
     }

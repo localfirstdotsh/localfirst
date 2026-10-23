@@ -1,7 +1,7 @@
 import type { CliEnv } from '../context.js';
 import { CliError, EXIT, usageError } from '../errors.js';
 import { digestOf } from '@localfirst/contracts';
-import { requireTty } from '../io.js';
+import { requireTty, terminalSafe } from '../io.js';
 import { KeychainError, approverAccount, registryAccount } from '../keychain.js';
 import { RegistryClient, RegistryError } from '../registry.js';
 import { parse, registryOrigin, str } from './common.js';
@@ -36,7 +36,7 @@ export async function contributionReview(env: CliEnv, argv: string[]): Promise<n
   const approval = draft.approval as { payload_digest?: string; expires_at?: string } | null | undefined;
   const warnings = Array.isArray(draft.warning_codes) ? (draft.warning_codes as string[]) : [];
   const reviewUrl = typeof draft.review_url === 'string' ? draft.review_url : null;
-  env.io.out(
+  env.io.out(terminalSafe(
     [
       `Draft ${draftId} (${String(draft.kind)}): ${String(draft.state)}, revision ${String(draft.revision)}`,
       `Payload digest: ${String(draft.payload_digest)}`,
@@ -46,7 +46,7 @@ export async function contributionReview(env: CliEnv, argv: string[]): Promise<n
         : 'No approval on record. Approving happens in the browser, after showing the exact artifact.',
       `Review in your browser: ${reviewUrl ?? '(none provided)'}`,
     ].join('\n') + '\n',
-  );
+  ));
 
   if (values.open === true) {
     if (!reviewUrl) throw usageError('The draft has no review URL to open.');
@@ -114,18 +114,25 @@ export async function contributionApprove(env: CliEnv, argv: string[]): Promise<
     ...review.files.flatMap((file) => ['', `--- Bundled file: ${file.path} ---`, file.content]),
     '--- end ---',
   ].filter((line): line is string => line !== null);
-  env.io.out(lines.join('\n') + '\n');
+  // The author controls this text: a carriage return or escape sequence could
+  // otherwise overwrite or hide part of what the person is approving.
+  const raw = lines.join('\n');
+  const shown = terminalSafe(raw);
+  env.io.out(shown + '\n');
+  if (shown !== raw) {
+    env.io.out('Note: invisible or control characters in this content are shown as \\u{XXXX} escapes. The digest covers the original characters.\n');
+  }
 
   if (review.stale) throw new CliError('The record changed since this draft was last validated. Ask the agent to validate it again.', EXIT.refused);
   if (errors.length > 0 && !deny) {
-    throw new CliError(`Blocking issues must be resolved first:\n${errors.map((issue) => `  - ${issue.message}`).join('\n')}`, EXIT.refused);
+    throw new CliError(terminalSafe(`Blocking issues must be resolved first:\n${errors.map((issue) => `  - ${issue.message}`).join('\n')}`), EXIT.refused);
   }
 
   const acknowledged: string[] = [];
   if (!deny) {
     for (const code of review.warning_codes) {
       const message = [...new Set(review.issues.filter((issue) => issue.code === code).map((issue) => issue.message))].join(' ') || code;
-      env.io.out(`\nLimitation (${code}): ${message}\n`);
+      env.io.out(terminalSafe(`\nLimitation (${code}): ${message}\n`));
       if (!(await env.io.ask('Acknowledge this limitation? Type "yes": '))) {
         throw new CliError('A limitation was not acknowledged. Nothing was approved.', EXIT.refused);
       }
@@ -135,7 +142,7 @@ export async function contributionApprove(env: CliEnv, argv: string[]): Promise<
   const question = deny
     ? `Deny publication of revision ${revision} (${digest})? Type "yes": `
     : `Approve exactly this artifact, revision ${revision} (${digest}), for ${Math.round(review.approval_window_seconds / 60)} minutes? Type "yes": `;
-  if (!(await env.io.ask(question))) throw new CliError(deny ? 'Not denied. Nothing was recorded.' : 'Not approved. Nothing was recorded.', EXIT.refused);
+  if (!(await env.io.ask(terminalSafe(question)))) throw new CliError(deny ? 'Not denied. Nothing was recorded.' : 'Not approved. Nothing was recorded.', EXIT.refused);
 
   let result;
   try {
