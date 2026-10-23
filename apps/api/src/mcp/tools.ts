@@ -194,7 +194,7 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
   if (config().features.communityNetwork) {
     server.registerTool('project_create_derivative_draft', {
       title: 'Create an attributed derivative draft',
-      description: 'Pin a public parent version and create your own private project draft. Preserve parent authors and source licenses; no evidence or management rights transfer. Separate human approval is required to publish.',
+      description: 'Pin a public parent version and create your own private project draft. Preserve parent authors and source licenses; no evidence or management rights transfer. Publishing needs the owner\'s approval of the exact version, unless the owner lets this connection publish without asking.',
       inputSchema: derivativeDraftInputSchema.extend({ project_id: z.uuid(), idempotency_key: idempotencyKey }).strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
       scopeChallenge: requireScopes('projects:draft'),
@@ -225,7 +225,7 @@ export function registerRegistryTools(server: McpServer, actor: Actor): void {
       annotations: { readOnlyHint: true, openWorldHint: false }, scopeChallenge: requireScopes('projects:read'),
     }, async args => { const denied = requireToolScope(actor, 'projects:read'); if (denied) return denied; return guard(async () => ok('Accepted community contributions.', await listCommunity(args.kind, { ...(args.project_id ? { project_id: args.project_id } : {}), ...(args.limit ? { limit: String(args.limit) } : {}), ...(args.cursor ? { cursor: args.cursor } : {}) }))); });
     server.registerTool('community_save', {
-      title: 'Save a private community contribution', description: 'Save an immutable private collection or attributed troubleshooting note; then create a contribution draft for exact human approval. Publication stays pending until operator review.',
+      title: 'Save a private community contribution', description: 'Save an immutable private collection or attributed troubleshooting note; then create a contribution draft for the owner to approve, or to publish if the owner lets this connection publish without asking. Publication stays pending until operator review.',
       inputSchema: z.discriminatedUnion('kind', [z.object({ kind: z.literal('collection'), payload: collectionInputSchema, idempotency_key: idempotencyKey }).strict(), z.object({ kind: z.literal('troubleshooting'), payload: troubleshootingInputSchema, idempotency_key: idempotencyKey }).strict()]),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, scopeChallenge: requireScopes('community:write'),
     }, async args => { const denied = requireToolScope(actor, 'community:write'); if (denied) return denied; return guard(async () => {

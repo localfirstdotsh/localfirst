@@ -40,6 +40,7 @@ export default function ProjectSpecDocsPage() {
           <li>Open the review URL from your agent. Inspect the exact revision, file set, digest, permissions, and warnings, then decide whether to approve publication.</li>
           <li>Your agent publishes the approved artifact. A changed draft needs fresh approval; a published version is immutable.</li>
         </ol>
+        <p>If you let your agent&apos;s connection publish without asking (in <Link href="/account/connections">Connections</Link>), it skips the review page, and each version it publishes is labeled as published without per-version review.</p>
         <p>Publication does not run tests or prove a claim. Follow the <Link href="/docs/testing">testing guide</Link> for local execution and separately reviewed evidence.</p>
       </DocsSection>
     </div>

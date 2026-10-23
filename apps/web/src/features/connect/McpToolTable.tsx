@@ -3,7 +3,7 @@ import { MCP_TOOL_CATALOG, type McpToolAccess } from '@localfirst/contracts';
 const GROUPS: ReadonlyArray<{ access: McpToolAccess; heading: string; note: string }> = [
   { access: 'read', heading: 'Read only', note: 'Look things up. These change nothing.' },
   { access: 'save', heading: 'Save privately', note: 'Write drafts, builds, reports, or notes that only you can see until you publish.' },
-  { access: 'publish', heading: 'Publish', note: 'Make a draft public. You approve that exact version in your browser first; the agent cannot approve it for you.' },
+  { access: 'publish', heading: 'Publish', note: 'Make a draft public. You approve that exact version in your browser first, unless you let that connection publish without asking in Connections. The agent cannot approve or turn that on for you.' },
 ];
 
 /** What a connected AI client can do, from the same list a backend test checks against the live server. */
