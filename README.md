@@ -22,8 +22,8 @@ npx localfirstdotsh@beta mcp add --client claude-code --registry <registry-origi
 npx localfirstdotsh --help    # after the first stable release
 ```
 
-Until the first beta is on npm (`npm view localfirstdotsh dist-tags`), build and run
-it from source: `pnpm install && pnpm build`, then `node packages/runner/dist/cli/bin.js`. See
+To run unreleased changes, build it from source: `pnpm install && pnpm build`, then
+`node packages/runner/dist/cli/bin.js`. See
 [`packages/runner/README.md`](packages/runner/README.md) for every command, and
 [`docs/operations/RUNBOOK.md`](docs/operations/RUNBOOK.md) ("npm package release")
 for how versions are published.
