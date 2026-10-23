@@ -87,7 +87,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const ownerPage = await owner.newPage();
       await ownerPage.goto(`${new URL(page.url()).origin}/account/projects`);
       await scan(ownerPage, `my projects (${scheme})`);
-      await ownerPage.getByRole('link', { name: 'See requests per day' }).click();
+      await ownerPage.getByRole('link', { name: 'Requests per day' }).first().click();
       await expect(ownerPage.locator('svg.chart')).toHaveCount(2);
       await scan(ownerPage, `usage (${scheme})`);
       await owner.close();
