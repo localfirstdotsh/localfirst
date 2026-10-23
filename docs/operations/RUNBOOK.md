@@ -69,6 +69,12 @@ Rollback: redeploy the previous image. Migrations are forward-only; a release
 that needs a destructive change ships the additive half first so the previous
 version still runs against the new schema.
 
+Exception: `0010_retire_approval_device` drops the approval-device tables and
+`publication_approvals.approver_credential_id` in the same release that stopped
+using them. An image older than that release fails on draft approval and
+publication against the new schema, so roll forward instead of back past it.
+Staging applied it on 2026-10-23; production starts from an empty database.
+
 ## Auth dependency upgrades
 
 Better Auth owns its own tables. After changing its version or plugins:
@@ -173,7 +179,8 @@ To create it (once, after `render.yaml` is on `staging`):
      allowance. Before naming any other header, repeat that test with it: the
      spoofed run must be cut off just like the plain one.
 
-Deploys then follow pushes to `staging` (`autoDeployTrigger: commit`). Each
+Deploys then follow pushes to `staging` (`autoDeployTrigger: commit`), so merging
+a promotion pull request into `staging` deploys it. Each
 service rebuilds only when its own sources, contracts, workspace, or Blueprint
 files change; test and documentation edits are ignored. The setup command on the
 website stays hidden until the CLI is released and tested (see
