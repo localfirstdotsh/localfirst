@@ -116,7 +116,11 @@ describe('publication delegation', () => {
     const row = connections.json.data.items.find((item: { connection_id: string }) => item.connection_id === connectionId);
     expect(row.publication_delegated).toBe(true);
     expect(row.delegated_publications).toEqual([
-      expect.objectContaining({ kind: 'project', draft_id: draft.draft_id, project_version_id: published.json.data.project_version_id }),
+      expect.objectContaining({
+        kind: 'project', draft_id: draft.draft_id, project_version_id: published.json.data.project_version_id,
+        project: { project_id: projectId, slug: published.json.data.slug, version_number: 1, visibility: 'published' },
+        record_visibility: null,
+      }),
     ]);
   });
 
@@ -173,8 +177,15 @@ describe('publication delegation', () => {
     const byAgent = await request(`/api/v1/drafts/${draft.draft_id}/approval`, { method: 'POST', ...asAgent(owner, clientId), body });
     expect(byAgent.status).toBe(403);
 
+    // The review page names the creating connection, so the person knows whom they would delegate to.
+    const reviewPath = `/api/browser/drafts/${draft.draft_id}/review`;
+    expect((await request(reviewPath, { user: owner.userId })).json.data.creating_connection).toEqual({
+      connection_id: expect.any(String), client_name: 'Example Agent', client_name_is_unverified: true, publication_delegated: false,
+    });
+
     const approved = await request(`/api/v1/drafts/${draft.draft_id}/approval`, { method: 'POST', user: owner.userId, body });
     expect(approved.status).toBe(201);
+    expect((await request(reviewPath, { user: owner.userId })).json.data.creating_connection.publication_delegated).toBe(true);
     const [delegation] = await db().select().from(publicationDelegations).where(eq(publicationDelegations.userId, owner.userId));
     expect(delegation?.clientId).toBe(clientId);
 
@@ -184,6 +195,7 @@ describe('publication delegation', () => {
       body: { kind: 'project', project_md: projectDocument({ key: 'browser-made' }) },
     });
     const sessionBody = { ...body, draft_revision: sessionDraft.json.data.revision, payload_digest: sessionDraft.json.data.payload_digest, acknowledged_warning_codes: sessionDraft.json.data.warning_codes };
+    expect((await request(`/api/browser/drafts/${sessionDraft.json.data.draft_id}/review`, { user: owner.userId })).json.data.creating_connection).toBeNull();
     const noClient = await request(`/api/v1/drafts/${sessionDraft.json.data.draft_id}/approval`, { method: 'POST', user: owner.userId, body: sessionBody });
     expect(noClient.status).toBe(409);
     expect(await db().select().from(publicationApprovals).where(eq(publicationApprovals.draftId, sessionDraft.json.data.draft_id))).toEqual([]);
@@ -193,6 +205,7 @@ describe('publication delegation', () => {
     const orphan = await agentDraft(owner, second.clientId, 'orphaned');
     await db().delete(oauthConsentTable).where(eq(oauthConsentTable.id, second.connectionId));
     const orphanBody = { ...body, draft_revision: orphan.revision, payload_digest: orphan.payload_digest, acknowledged_warning_codes: orphan.warning_codes };
+    expect((await request(`/api/browser/drafts/${orphan.draft_id}/review`, { user: owner.userId })).json.data.creating_connection).toBeNull();
     const gone = await request(`/api/v1/drafts/${orphan.draft_id}/approval`, { method: 'POST', user: owner.userId, body: orphanBody });
     expect(gone.status).toBe(409);
     expect(await db().select().from(publicationApprovals).where(eq(publicationApprovals.draftId, orphan.draft_id))).toEqual([]);
@@ -217,5 +230,12 @@ describe('publication delegation', () => {
     expect(published.json.data).toMatchObject({ kind: 'build', visibility: 'public', review_state: 'pending', publication_authorization: 'delegated' });
     const [approval] = await db().select().from(publicationApprovals).where(eq(publicationApprovals.draftId, draft.draft_id));
     expect(approval).toMatchObject({ authorizationKind: 'delegated', clientId });
+
+    // The owner sees the record's current state, before and after withdrawing it.
+    const recordRow = async () => (await request('/api/v1/me/connections', { user: contributor.userId })).json.data.items
+      .find((item: { connection_id: string }) => item.connection_id === connectionId).delegated_publications[0];
+    expect(await recordRow()).toMatchObject({ kind: 'build', record_id: buildId, project: null, record_visibility: 'public' });
+    expect((await request(`/api/v1/builds/${buildId}/withdraw`, { method: 'POST', user: contributor.userId })).status).toBe(200);
+    expect((await recordRow()).record_visibility).toBe('withdrawn');
   });
 });

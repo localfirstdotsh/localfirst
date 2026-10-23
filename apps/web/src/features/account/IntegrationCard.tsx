@@ -6,6 +6,7 @@ import { StatusDot } from '../../components/ui/StatusDot';
 import { ConfirmationSection } from '../../components/composites/ConfirmationSection';
 import { DetailsList } from '../../components/composites/DetailsList';
 import { PermissionGroup, PermissionSummary, groupScopes } from '../auth';
+import { PublicationDelegation } from './PublicationDelegation';
 import type { ConnectionsData } from '../../lib/browser-schemas';
 
 type Connection = ConnectionsData['items'][number];
@@ -42,6 +43,7 @@ export function IntegrationCard({ item, data, busy, locked, onRevoke }: {
       </header>
       <p className="small muted">{details}</p>
       <PermissionSummary groups={groups} />
+      <PublicationDelegation item={item} name={name} />
       {open && <div id={`${id}-access`} className="stack gap-16 integration-detail">
         {groups.map((group) => <PermissionGroup key={group.level} group={group} descriptions={data.scope_descriptions} />)}
         <details className="inline-help"><summary>Technical details</summary><DetailsList rows={[['Client identifier', item.client_id], ['Resource', data.resource], ['Authorized', item.created_at], ['Updated', item.updated_at]]} /></details>
@@ -51,7 +53,7 @@ export function IntegrationCard({ item, data, busy, locked, onRevoke }: {
           <Button className="button-danger" loading={busy} disabled={locked} onClick={onRevoke}>Confirm revocation</Button>
           <Button disabled={busy} onClick={() => { setConfirming(false); revokeButton.current?.focus(); }}>Cancel</Button>
         </>}>
-        <p className="small">This application will lose access to your Localfirst account. Its refresh authorization will be revoked. Published records stay published.</p>
+        <p className="small">This application will lose access to your Localfirst account. Its refresh authorization will be revoked, along with any permission to publish without asking. Published records stay published.</p>
       </ConfirmationSection>}
     </article>
   );

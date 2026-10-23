@@ -15,6 +15,7 @@ import { projects, projectVersions, publicationApprovals, userProfiles } from '.
 import { activeApproval, loadOwnedDraft, serializeDraft } from '../../services/drafts.js';
 import { loadReviewData } from '../../services/review.js';
 import { listConnections } from '../../services/connections.js';
+import { creatingConnection } from '../../services/delegation.js';
 import { listApproverDevices, pendingLinkByCode } from '../../services/approvers.js';
 import { fillDays, getOwnedProjectWithUsage, listOwnedProjectsWithUsage, usageSeries } from '../../services/usage.js';
 
@@ -105,7 +106,9 @@ browserRoutes.get('/deletion-preview', requireHuman(), async (c) => {
   return c.json(success({ handle: profile.handle, managed_projects: managed }, c.get('requestId')));
 });
 browserRoutes.get('/drafts/:draft_id/review', requireHuman(), async (c) => {
-  const draft = await loadOwnedDraft(c.get('actor'), c.req.param('draft_id'));
+  const actor = c.get('actor');
+  if (actor.kind !== 'session') throw ApiError.forbidden();
+  const draft = await loadOwnedDraft(actor, c.req.param('draft_id'));
   const review = await loadReviewData(draft);
   const approval = await activeApproval(draft.id);
   const matches = approval?.draftRevision === draft.revision && approval?.payloadDigest === draft.payloadDigest;
@@ -130,5 +133,6 @@ browserRoutes.get('/drafts/:draft_id/review', requireHuman(), async (c) => {
     files: (draft.payload.files ?? []).map((file) => ({ path: file.path, content: file.content })),
     approval_window_seconds: config().ttl.approvalSeconds,
     profiles: { declarative: config().features.agentEnvironments, framework: config().features.frameworkEnvironments },
+    creating_connection: await creatingConnection(actor.userId, draft.createdByClientId),
   }, c.get('requestId')));
 });
