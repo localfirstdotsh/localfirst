@@ -118,7 +118,8 @@ export async function writeBundleDir(dir: string, projectMd: string, meta: Bundl
     await mkdir(dirname(target), { recursive: true, mode: 0o700 });
     await writeFile(target, file.content, { mode: 0o600, flag: 'wx' });
   }
-  await writeFile(join(root, BUNDLE_META_FILE), `${JSON.stringify(meta, null, 2)}\n`, { mode: 0o600 });
+  // Exclusive like the other files, so a planted symlink is never written through.
+  await writeFile(join(root, BUNDLE_META_FILE), `${JSON.stringify(meta, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
 }
 
 /** Validate a loaded bundle and return the result, or explain why it is unusable. */

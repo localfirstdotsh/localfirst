@@ -1,5 +1,6 @@
 import type { CliEnv } from '../context.js';
 import { CliError, EXIT, usageError } from '../errors.js';
+import { terminalSafe } from '../io.js';
 import { hostname } from 'node:os';
 import { KeychainError, approverAccount, registryAccount, runtimeAccount } from '../keychain.js';
 import { RegistryClient, RegistryError } from '../registry.js';
@@ -54,11 +55,12 @@ export async function authApproverLogin(env: CliEnv, argv: string[]): Promise<nu
     if (cause instanceof RegistryError) throw new CliError(`Could not start linking (${cause.code ?? cause.status}): ${cause.message}`, EXIT.failed);
     throw cause;
   }
-  env.io.out(
+  env.io.out(terminalSafe(
     `To link this machine (${label}), open:\n  ${started.verification_url}\n` +
       `and approve the code ${started.user_code} in your signed-in browser.\n` +
-      'Only approve if that code matches. This does not publish anything.\n',
-  );
+      'Only approve if that code matches. This does not publish anything.\n' +
+      'An agent that can run commands as you on this machine can also answer this terminal, so approving from here is weaker than approving in the browser.\n',
+  ));
   try {
     if (new URL(started.verification_url).origin === origin) await env.openUrl(started.verification_url);
   } catch {
