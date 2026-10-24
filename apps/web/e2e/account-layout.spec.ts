@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { OWNER_ID, horizontalOverflow } from './helpers';
 
-const PAGES = [['My projects', '/account/projects'], ['Connections', '/account/connections'], ['Approval devices', '/account/devices'], ['Danger zone', '/account/delete']] as const;
+const PAGES = [['My projects', '/account/projects'], ['Connections', '/account/connections'], ['Danger zone', '/account/delete']] as const;
 const WIDTHS = [1440, 1024, 768, 390];
 
 test.describe('account area layout', () => {
@@ -48,23 +48,6 @@ test.describe('account area layout', () => {
     expect(Math.round(footer.y + footer.height)).toBe(1400);
   });
 
-  test('links a device only with a complete code and reports an unknown one', async ({ page }) => {
-    await page.goto('/account/devices');
-    await expect(page.getByRole('heading', { name: 'No linked devices' })).toBeVisible();
-    await page.getByRole('button', { name: 'Link a device' }).first().click();
-    await expect(page.getByText('localfirstdotsh auth approver-login')).toBeVisible();
-    const check = page.getByRole('button', { name: 'Check code' });
-    await expect(check).toBeDisabled();
-    await page.getByLabel('Link code').fill('abcd-23');
-    await expect(check).toBeDisabled();
-    await page.getByLabel('Link code').fill('zzzz-9999');
-    await expect(check).toBeEnabled();
-    await check.click();
-    await expect(page).toHaveURL(/code=zzzz-9999/i);
-    await expect(page.getByRole('alert').filter({ hasText: 'unknown, already used, or expired' })).toBeVisible();
-    await expect(page.getByLabel('Link code')).toHaveAttribute('aria-invalid', 'true');
-  });
-
   test('signs out through the auth service and returns home, and reports a failure', async ({ page }, info) => {
     test.skip(info.project.name === 'phone', 'the dropdown is the inline list in the phone menu');
     await page.goto('/account/projects');
@@ -73,7 +56,7 @@ test.describe('account area layout', () => {
     await expect(signOut).toBeHidden();
     await menu.click();
     await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Account', exact: true })).toHaveAttribute('href', '/account/projects');
-    for (const name of ['My projects', 'Connections', 'Approval devices', 'Danger zone']) await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name })).toHaveCount(0);
+    for (const name of ['My projects', 'Connections', 'Danger zone']) await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(signOut).toBeHidden();
     await expect(menu).toBeFocused();

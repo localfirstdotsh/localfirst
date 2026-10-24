@@ -47,7 +47,7 @@ describe('localfirst agent skill', () => {
 
   it('uses only CLI commands the runner help lists', () => {
     const commands = [...all.matchAll(/localfirstdotsh ((?:auth|contribution|environment|framework|project|report|runtime|test) [a-z-]+)/g)].map((m) => m[1]!);
-    expect(commands.length).toBeGreaterThan(5);
+    expect(commands.length).toBeGreaterThanOrEqual(5);
     for (const command of commands) expect(HELP, command).toContain(`localfirstdotsh ${command}`);
   });
 

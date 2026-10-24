@@ -1,0 +1,118 @@
+# Publishes the `localfirstdotsh` npm package (packages/runner) when a release tag is
+# pushed, and only then. See docs/operations/RUNBOOK.md ("npm package release") for the
+# process and the one-time setup.
+#
+#   localfirstdotsh-v0.1.0-beta.1  ->  dist-tag `beta`,   commit must be on staging
+#   localfirstdotsh-v0.1.0         ->  dist-tag `latest`, commit must be on main
+#
+# Publishing uses npm Trusted Publishing (GitHub OIDC): no npm token is stored anywhere.
+# The npm trusted publisher must name this file (release.yml) and the `npm` environment,
+# so renaming either breaks publishing until the npm settings are updated too.
+
+name: Release
+
+on:
+  push:
+    tags: ['localfirstdotsh-v*']
+
+# One release at a time, and never cancel a publish that has started.
+concurrency:
+  group: release-localfirstdotsh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.channel.outputs.version }}
+      dist-tag: ${{ steps.channel.outputs.dist-tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - id: channel
+        name: Check tag, version, branch and registry
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#localfirstdotsh-v}"
+          manifest="$(node -p "require('./packages/runner/package.json').version")"
+          if [ "$version" != "$manifest" ]; then
+            echo "::error::Tag $TAG does not match packages/runner/package.json version $manifest."; exit 1
+          fi
+          # A prerelease can only ever reach `beta`; only a plain X.Y.Z can reach `latest`.
+          if [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            dist_tag=latest; branch=main
+          elif [[ "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-beta\.(0|[1-9][0-9]*)$ ]]; then
+            dist_tag=beta; branch=staging
+          else
+            echo "::error::$version is neither X.Y.Z nor X.Y.Z-beta.N."; exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/$branch"; then
+            echo "::error::$TAG ($GITHUB_SHA) is not on $branch; $dist_tag releases come from $branch."; exit 1
+          fi
+          published="$(npm view "localfirstdotsh@$version" version 2>/dev/null || true)"
+          if [ "$published" = "$version" ]; then
+            echo "::error::localfirstdotsh@$version is already on npm. Versions are never reused; bump and tag again."; exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
+          echo "Releasing localfirstdotsh@$version to dist-tag $dist_tag from $branch."
+
+  check:
+    needs: plan
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: [plan, check]
+    runs-on: ubuntu-latest
+    # Protected environment: add required reviewers in the repository settings so each
+    # publish waits for approval. The npm trusted publisher is bound to this name.
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      DIST_TAG: ${{ needs.plan.outputs.dist-tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+      # No dependency cache in the publishing job.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # Trusted publishing needs npm >= 11.5.1; pin the CLI that publishes.
+      - run: npm install -g npm@12.2.1 && npm --version
+      - run: pnpm install --frozen-lockfile
+      # prepack builds contracts and the runner first.
+      - name: Pack
+        working-directory: packages/runner
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          pnpm pack --pack-destination "$RUNNER_TEMP/release"
+          echo "TARBALL=$RUNNER_TEMP/release/localfirstdotsh-$VERSION.tgz" >> "$GITHUB_ENV"
+      # Install and run the exact file that is about to be published.
+      - run: node packages/runner/scripts/test-package.mjs "$TARBALL"
+      - name: Publish
+        run: npm publish "$TARBALL" --tag "$DIST_TAG" --access public --provenance
+      - name: Verify on the registry
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if [ "$(npm view "localfirstdotsh@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then break; fi
+            sleep 10
+          done
+          npm view "localfirstdotsh@$VERSION" version dist.integrity
+          npm view localfirstdotsh dist-tags
+          test "$(npm view localfirstdotsh "dist-tags.$DIST_TAG")" = "$VERSION"

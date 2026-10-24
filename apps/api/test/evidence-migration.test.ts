@@ -163,14 +163,12 @@ describe('upgrade from the previous release', () => {
             visibility: 'unpublished', listingOrigin: 'creator_submitted',
           })
           .returning();
-        const [version] = await old
-          .insert(schema.projectVersions)
-          .values({
-            projectId: project!.id, versionNumber: 1, specVersion: '0.1.0', schemaId: 'localfirst/project/v0.2',
-            manifest: validated.manifest, markdown: validated.markdown, contentDigest: validated.content_digest!,
-            payloadDigest: validated.payload_digest, derived: validated.derived, publishedByUserId: 'user-upgrade',
-          })
-          .returning();
+        // Raw SQL with the historical column set: project_versions and drafts have gained columns since release N-1.
+        const { rows: [version] } = await pool.query<{ id: string }>(
+          `insert into project_versions (project_id, version_number, spec_version, schema_id, manifest, markdown, content_digest, payload_digest, derived, published_by_user_id)
+           values ($1, 1, '0.1.0', 'localfirst/project/v0.2', $2, $3, $4, $5, $6, 'user-upgrade') returning id`,
+          [project!.id, JSON.stringify(validated.manifest), validated.markdown, validated.content_digest, validated.payload_digest, JSON.stringify(validated.derived)],
+        );
         await old.update(schema.projects).set({ currentVersionId: version!.id, visibility: 'published' }).where(sql`id = ${project!.id}`);
         // The version predates test definitions: only the P0 declaration rows exist.
         await old.insert(schema.projectVersionFiles).values({
@@ -183,10 +181,10 @@ describe('upgrade from the previous release', () => {
           (project_version_id,key,schema_id,path,harness,scope,configuration_key,model_role,required_capabilities,manifest_digest,fixture_digest,runner_available)
           values ($1,'request-label-v1','localfirst/test/v0.1',$2,'declarative_task_v1','component','local-chat','classifier',$3,$4,$5,false)`,
           [version!.id, EXAMPLE_TEST_PATH, JSON.stringify(['chat','json_output']), digestOf('m'), digestOf('f')]);
-        const [draft] = await old
-          .insert(schema.drafts)
-          .values({ kind: 'project', ownerUserId: 'user-upgrade', payload: {}, payloadDigest: digestOf('draft') })
-          .returning();
+        const { rows: [draft] } = await pool.query<{ id: string }>(
+          `insert into drafts (kind, owner_user_id, payload, payload_digest) values ('project', 'user-upgrade', '{}'::jsonb, $1) returning id`,
+          [digestOf('draft')],
+        );
         // Raw SQL: this table has gained columns since release N-1, so the current Drizzle insert would name them.
         await pool.query(
           `insert into publication_approvals (draft_id, kind, actor_user_id, draft_revision, payload_digest, acknowledged_warning_codes, policy_version, expires_at)
@@ -275,7 +273,12 @@ describe('P1 to P2 projection upgrade', () => {
         const now = new Date();
         await conn.insert(schema.userTable).values({ id: 'p1-contributor', name: 'P1 Contributor', email: 'p1@test.invalid', emailVerified: false, createdAt: now, updatedAt: now });
         const [project] = await conn.insert(schema.projects).values({ slug: 'p1-project', projectKey: 'request-labeler', managerUserId: 'p1-contributor', type: 'experiment', visibility: 'unpublished', listingOrigin: 'creator_submitted' }).returning();
-        const [version] = await conn.insert(schema.projectVersions).values({ projectId: project!.id, versionNumber: 1, specVersion: '0.1.0', schemaId: 'localfirst/project/v0.2', manifest: validated.manifest, markdown: validated.markdown, contentDigest: validated.content_digest!, payloadDigest: validated.payload_digest, derived: validated.derived, publishedByUserId: 'p1-contributor' }).returning();
+        // Raw SQL with the historical column set: project_versions has gained columns since P1.
+        const { rows: [version] } = await pool.query<{ id: string }>(
+          `insert into project_versions (project_id, version_number, spec_version, schema_id, manifest, markdown, content_digest, payload_digest, derived, published_by_user_id)
+           values ($1, 1, '0.1.0', 'localfirst/project/v0.2', $2, $3, $4, $5, $6, 'p1-contributor') returning id`,
+          [project!.id, JSON.stringify(validated.manifest), validated.markdown, validated.content_digest, validated.payload_digest, JSON.stringify(validated.derived)],
+        );
         await conn.update(schema.projects).set({ currentVersionId: version!.id, visibility: 'published' }).where(sql`id = ${project!.id}`);
         await conn.insert(schema.compatibilitySummaries).values({ projectId: project!.id, projectVersionId: version!.id, configurationKey: 'local-chat', subjectFingerprint: digestOf('legacy-private-subject'), subject: { platform: { unapproved_hardware: 'private' } }, testDefinitionId: null, scope: 'manual', evidenceLevel: 'community_reported', counts: { reports: 1, successes: 1, failures: 0, partial: 0 }, distinctContributors: 1, conflict: false, evidenceIds: [], latestReportAt: now });
         await runMigrations(url);
@@ -285,6 +288,57 @@ describe('P1 to P2 projection upgrade', () => {
         const events = await conn.select().from(schema.outboxEvents).where(sql`aggregate_id = ${project!.id}`);
         expect(events).toHaveLength(1); expect(events[0]?.eventType).toBe('evidence.changed');
         expect(await conn.select().from(schema.communityRecords)).toEqual([]);
+      });
+    } finally { await rm(folder, { recursive: true, force: true }); }
+  });
+});
+
+describe('approval device retirement (0010)', () => {
+  it('revokes unused device approvals, keeps every other approval, and drops the device tables', async () => {
+    const folder = await mkdtemp(join(tmpdir(), 'localfirst-device-upgrade-'));
+    try {
+      await cp(MIGRATIONS, folder, { recursive: true });
+      const journalPath = join(folder, 'meta', '_journal.json');
+      const journal = JSON.parse(await readFile(journalPath, 'utf8'));
+      journal.entries = journal.entries.filter((entry: { tag: string }) => entry.tag < '0010');
+      await writeFile(journalPath, JSON.stringify(journal));
+      await withThrowawayDatabase(async (url, pool) => {
+        const conn = drizzle(pool);
+        await migrate(conn, { migrationsFolder: folder });
+        const now = new Date();
+        await conn.insert(schema.userTable).values({ id: 'device-owner', name: 'Owner', email: 'owner@test.invalid', emailVerified: false, createdAt: now, updatedAt: now });
+        const { rows: [credential] } = await pool.query<{ id: string }>(
+          `insert into approver_credentials (user_id, secret_hash, label, expires_at) values ('device-owner', 'hash', 'laptop', now() + interval '30 days') returning id`,
+        );
+        await pool.query(`insert into approver_links (user_code, poll_hash, client_label, state, user_id, expires_at) values ('ABCD2345', 'poll', 'laptop', 'pending', 'device-owner', now() + interval '10 minutes')`);
+        const DIGEST = digestOf('retired-device-draft');
+        const approval = async (credentialId: string | null, consumed: boolean) => {
+          const { rows: [draft] } = await pool.query<{ id: string }>(
+            `insert into drafts (kind, owner_user_id, payload, payload_digest) values ('project', 'device-owner', '{}', $1) returning id`,
+            [DIGEST],
+          );
+          const { rows: [row] } = await pool.query<{ id: string }>(
+            `insert into publication_approvals (draft_id, kind, actor_user_id, draft_revision, payload_digest, acknowledged_warning_codes, policy_version, session_id, approver_credential_id, expires_at, consumed_at)
+             values ($1, 'project', 'device-owner', 1, $5, '[]', 'v', $2, $3, now() + interval '30 minutes', $4) returning id`,
+            [draft!.id, credentialId ? null : 'session-1', credentialId, consumed ? new Date() : null, DIGEST],
+          );
+          return row!.id;
+        };
+        const deviceUnused = await approval(credential!.id, false);
+        const deviceUsed = await approval(credential!.id, true);
+        const browserUnused = await approval(null, false);
+
+        await runMigrations(url);
+
+        const { rows } = await pool.query<{ id: string; revoked_at: Date | null; consumed_at: Date | null }>('select id, revoked_at, consumed_at from publication_approvals');
+        const byId = new Map(rows.map((row) => [row.id, row]));
+        expect(byId.get(deviceUnused)?.revoked_at).toBeInstanceOf(Date);
+        expect(byId.get(deviceUsed)).toMatchObject({ revoked_at: null, consumed_at: expect.any(Date) });
+        expect(byId.get(browserUnused)).toMatchObject({ revoked_at: null, consumed_at: null });
+        const { rows: tables } = await pool.query(`select table_name from information_schema.tables where table_name in ('approver_credentials', 'approver_links')`);
+        expect(tables).toEqual([]);
+        const { rows: columns } = await pool.query(`select column_name from information_schema.columns where table_name = 'publication_approvals' and column_name = 'approver_credential_id'`);
+        expect(columns).toEqual([]);
       });
     } finally { await rm(folder, { recursive: true, force: true }); }
   });

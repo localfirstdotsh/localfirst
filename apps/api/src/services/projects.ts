@@ -92,7 +92,21 @@ export interface VersionDetail {
   contentDigest: string;
   derived: DerivedFacts;
   warningCodes: string[];
+  publicationAuthorization: 'human' | 'delegated';
+  publishedViaClientName: string | null;
   publishedAt: Date;
+}
+
+/**
+ * How a version's publication was authorized (section 10.4). A delegated
+ * version had no per-version human review; the client name is self-reported.
+ */
+export function publicationOf(version: VersionDetail) {
+  return {
+    authorization: version.publicationAuthorization,
+    via_client_name: version.publishedViaClientName,
+    via_client_name_is_unverified: version.publishedViaClientName !== null,
+  };
 }
 
 export async function loadVersion(projectId: string, versionId: string): Promise<VersionDetail> {
@@ -405,6 +419,7 @@ export function serializeVersion(
     schema: version.schemaId,
     content_digest: version.contentDigest,
     published_at: version.publishedAt.toISOString(),
+    publication: publicationOf(version),
     /** Warnings the publisher explicitly acknowledged for this artifact. */
     acknowledged_warning_codes: version.warningCodes,
     manifest: normalizedManifest(version),

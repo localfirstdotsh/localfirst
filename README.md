@@ -5,10 +5,28 @@ agent-native project registry**, **Phase 2 (P1): local testing**, and the
 **Phase 3 (P2) community backend**. The
 registry stores and serves portable project specifications over REST and a
 hosted MCP adapter, with immutable versions, explicit human approval of the
-exact published artifact, source provenance, and conservative compatibility
-assessment. The `localfirstdotsh` runner (`packages/runner/`) runs bounded declarative
+exact published artifact (or an owner's opt-in delegation to one connection),
+source provenance, and conservative compatibility assessment. The `localfirstdotsh` runner (`packages/runner/`) runs bounded declarative
 tests and fixed agent workflows against a local Ollama or LM Studio runtime and submits sanitized reports
 for review.
+
+## Install the CLI
+
+The runner CLI's npm package is [`localfirstdotsh`](https://www.npmjs.com/package/localfirstdotsh)
+(Node.js 22 or newer, macOS or Linux). Prereleases are published under the `beta`
+dist-tag and stable versions under `latest`:
+
+```sh
+npx localfirstdotsh@beta --help
+npx localfirstdotsh@beta mcp add --client claude-code --registry <registry-origin>
+npx localfirstdotsh --help    # after the first stable release
+```
+
+To run unreleased changes, build it from source: `pnpm install && pnpm build`, then
+`node packages/runner/dist/cli/bin.js`. See
+[`packages/runner/README.md`](packages/runner/README.md) for every command, and
+[`docs/operations/RUNBOOK.md`](docs/operations/RUNBOOK.md) ("npm package release")
+for how versions are published.
 
 ## What is and is not implemented
 
@@ -18,10 +36,10 @@ for review.
 | Direct text submission **and** bounded public GitHub import | Implemented |
 | Immutable versions, content digests, author attribution, source provenance | Implemented |
 | Task/model/runtime/hardware/OS/evidence search and reference catalogs | Implemented |
-| Scoped OAuth for agents, GitHub human sign-in, exact-artifact approval | Implemented |
+| Scoped OAuth for agents, GitHub human sign-in, exact-artifact approval, per-connection publication delegation | Implemented |
 | Moderation, claims, audit, durable jobs, outbox, idempotency | Implemented |
 | Five curated Jetson/edge entries plus a documentation-only hardware entry | Implemented (seed) |
-| Local runner, Ollama/LM Studio adapters, local test execution | Implemented (`packages/runner/`, package `localfirstdotsh`, not yet published to npm) |
+| Local runner, Ollama/LM Studio adapters, local test execution | Implemented (`packages/runner/`, npm package `localfirstdotsh`; see "Install the CLI") |
 | Build/test-result submission, operator evidence review, compatibility reports | Implemented |
 | Comparison groups, independent verification, derivatives, relationship views, collections, troubleshooting notes | Implemented (Phase 3) |
 | Fixed multi-agent environments, workflow fixtures, private local inputs and sanitized workflow evidence | Implemented; environment handoff and workflow writes default off |
@@ -40,9 +58,13 @@ Consequences that the API states for itself rather than implying:
   policy.
 - **A declared harness is not always runnable.** `runner_available` is true
   only for test definitions the first-party runner can execute.
-- **Publication needs a person.** An agent prepares, edits, validates, and
-  publishes, but the approval of the exact payload digest happens in a browser
-  session and is single use with a short expiry.
+- **Publication needs a person's decision.** An agent prepares, edits,
+  validates, and publishes. Either the person approves the exact payload digest
+  in a browser session (single use, short expiry), or they have turned on
+  "Publish without asking" for that one connection in a browser session. A
+  delegated version still names the exact digest and acknowledges every
+  warning, and it is labeled publicly as published without per-version review.
+  There is no terminal or agent-side approval.
 
 ## Layout
 
@@ -264,6 +286,7 @@ Tests need a database: `createdb localfirst_test` (override with
 - [`docs/product/IMPLEMENTATION_STATUS.md`](docs/product/IMPLEMENTATION_STATUS.md) — PRD section coverage, decisions taken, and open items.
 - [`docs/operations/CLIENT_MATRIX.md`](docs/operations/CLIENT_MATRIX.md) — what was actually tested, including the MCP protocol version this release negotiates.
 - [`docs/operations/RUNBOOK.md`](docs/operations/RUNBOOK.md) — deploy, migrate, restore, and incident handling.
+- [`docs/audits/`](docs/audits/) — security and release-readiness audits of the `localfirstdotsh` package, each dated, with its findings and verdict.
 
 ## License
 

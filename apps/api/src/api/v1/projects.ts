@@ -31,6 +31,7 @@ import {
   hydrateSummaries,
   serializeProjectDetail,
   serializeVersion,
+  publicationOf,
 } from '../../services/projects.js';
 import { assessProjectVersion } from '../../services/assessment.js';
 import { parseSearchFilters, searchCursorBound, searchProjects } from '../../services/search.js';
@@ -176,6 +177,7 @@ projectRoutes.get('/:project_id/versions', async (c) => {
           spec_version: version.specVersion,
           content_digest: version.contentDigest,
           published_at: version.publishedAt.toISOString(),
+          publication: publicationOf(version),
           is_current: version.id === project.currentVersionId,
         })),
         has_more: false,

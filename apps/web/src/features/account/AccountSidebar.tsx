@@ -6,7 +6,6 @@ import { Icon, type IconName } from '../../components/ui/Icon';
 const LINKS: ReadonlyArray<{ key: string; label: string; icon: IconName; danger?: true }> = [
   { key: 'projects', label: 'My projects', icon: 'projects' },
   { key: 'connections', label: 'Connections', icon: 'connections' },
-  { key: 'devices', label: 'Approval devices', icon: 'devices' },
   { key: 'delete', label: 'Danger zone', icon: 'danger', danger: true },
 ];
 

@@ -6,9 +6,9 @@ import { z } from './validation';
  * project labels or prototype data. Unset means unreleased.
  *
  * LOCALFIRST_CLI_RELEASED=true
- * LOCALFIRST_CLI_VERSION=0.1.0
- * LOCALFIRST_CLI_SETUP_COMMAND="npx localfirstdotsh mcp add --client claude-code --registry https://localfirst.sh"
- * LOCALFIRST_TESTED_CLIENTS='[{"id":"claude-code","label":"Claude Code","command":"npx localfirstdotsh mcp add --client claude-code --registry https://localfirst.sh"}]'
+ * LOCALFIRST_CLI_VERSION=0.1.0-beta.0
+ * LOCALFIRST_CLI_SETUP_COMMAND="npx localfirstdotsh@beta mcp add --client claude-code --registry https://localfirst.sh"
+ * LOCALFIRST_TESTED_CLIENTS='[{"id":"claude-code","label":"Claude Code","command":"npx localfirstdotsh@beta mcp add --client claude-code --registry https://localfirst.sh"}]'
  */
 
 /** Printable ASCII on one line: it is rendered as text and copied verbatim. */

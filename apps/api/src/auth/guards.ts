@@ -65,33 +65,6 @@ export function requireHuman(): MiddlewareHandler<AppEnv> {
   };
 }
 
-/**
- * Routes where a person's decision is recorded or read. Besides a browser
- * session, an approval credential held by that person's own machine is
- * accepted here and on no other route (see `approverRouteAllowed`).
- */
-export function requireApprover(): MiddlewareHandler<AppEnv> {
-  return async (c, next) => {
-    const actor = c.get('actor');
-    if (actor.kind === 'anonymous') {
-      throw ApiError.unauthenticated('This action requires a signed-in person.');
-    }
-    if (actor.kind !== 'session' && actor.kind !== 'approver') {
-      throw ApiError.forbidden(
-        'This action requires a signed-in person: a browser session or a linked approval device, not an access token.',
-      );
-    }
-    await next();
-  };
-}
-
-/** The only requests an approval credential may make. Everything else is refused before routing. */
-export function approverRouteAllowed(method: string, path: string): boolean {
-  return (
-    /^\/api\/v1\/drafts\/[0-9a-f-]{36}\/approval$/.test(path) && (method === 'POST' || method === 'DELETE')
-  ) || (/^\/api\/v1\/drafts\/[0-9a-f-]{36}\/review$/.test(path) && method === 'GET');
-}
-
 export function requireOperator(role: OperatorRole = 'moderator'): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
     const actor = c.get('actor');

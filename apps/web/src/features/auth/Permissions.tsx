@@ -15,7 +15,7 @@ export function elevatedScopes(scopes: readonly string[], descriptions: Record<s
   return scopes.filter((scope) => ['publish', 'change'].includes(scopeLevel(scope, Object.hasOwn(descriptions, scope))));
 }
 const GROUPS: Record<ScopeLevel, { title: string; note?: string }> = {
-  publish: { title: 'Can publish for you', note: 'Each publication still needs your separate approval of the exact version.' },
+  publish: { title: 'Can publish for you', note: 'Each publication still needs your separate approval of the exact version, unless you later let this connection publish without asking.' },
   change: { title: 'Can change your data' },
   read: { title: 'Read only' },
   protocol: { title: 'Sign-in and session' },
@@ -70,5 +70,5 @@ export function Permissions({ scopes, descriptions }: { scopes: readonly string[
   </div>;
 }
 export function SecurityNotice() {
-  return <p className="small muted">Access never approves a publication. Every public artifact needs your separate approval. This connection cannot run models, read local files, or use runtime credentials.</p>;
+  return <p className="small muted">Access never approves a publication. Every public artifact needs your separate approval, unless you later turn on Publish without asking me for that connection in Connections. This connection cannot run models, read local files, or use runtime credentials.</p>;
 }

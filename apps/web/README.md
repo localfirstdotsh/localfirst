@@ -17,7 +17,7 @@ src/
     references/           Model/hardware catalogs and their registry error handling
     connect/              Deployment-aware connection setup
     auth/                 Sign-in, original-query OAuth consent and permission presentation
-    account/              Connections/devices, owned projects/usage and deletion
+    account/              Connections and publication delegation, owned projects/usage and deletion
     review/               Exact-artifact inspection, acknowledgements and approval lifecycle
   components/
     ui/                   Button, Input, Checkbox, Badge and shared choice controls

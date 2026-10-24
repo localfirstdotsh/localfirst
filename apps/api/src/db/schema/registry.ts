@@ -23,7 +23,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { userTable } from './auth.js';
+import { oauthConsentTable, userTable } from './auth.js';
 
 /** PostgreSQL full-text search vector (section 18.1). */
 export const tsvector = customType<{ data: string; driverData: string }>({
@@ -155,11 +155,16 @@ export const projectVersions = pgTable(
       .references(() => userTable.id, { onDelete: 'restrict' }),
     publishedFromDraftId: uuid('published_from_draft_id'),
     approvalId: uuid('approval_id'),
+    /** A person's exact approval (`human`) or the owner's delegation to a connection (section 10.4). */
+    publicationAuthorization: text('publication_authorization').notNull().default('human'),
+    /** For a delegated publication, the connection's self-reported client name at the time. */
+    publishedViaClientName: text('published_via_client_name'),
     publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' })
       .notNull()
       .default(now),
   },
   (table) => [
+    check('project_versions_publication_authorization_check', sql`${table.publicationAuthorization} in ('human', 'delegated')`),
     unique('project_versions_project_number_uq').on(table.projectId, table.versionNumber),
     unique('project_versions_project_digest_uq').on(table.projectId, table.contentDigest),
     // Lets `projects.current_version_id` carry a composite FK that proves the
@@ -448,6 +453,8 @@ export const drafts = pgTable(
     importDescriptor: jsonb('import_descriptor'),
     importError: jsonb('import_error'),
     operationId: uuid('operation_id'),
+    /** The OAuth client of the connection that created this draft, if one did (section 10.4). */
+    createdByClientId: text('created_by_client_id'),
     publishedVersionId: uuid('published_version_id').references(() => projectVersions.id, {
       onDelete: 'set null',
     }),
@@ -467,59 +474,6 @@ export const drafts = pgTable(
 );
 
 /** Exact-artifact approval (section 10.4): single use, short lived, content bound. */
-/**
- * A machine-level credential that can record a person's publication decision
- * (and nothing else). It is minted only after a signed-in browser session
- * approves a link request, is never grantable through OAuth or MCP consent,
- * and is stored as a hash.
- */
-export const approverCredentials = pgTable(
-  'approver_credentials',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => userTable.id, { onDelete: 'cascade' }),
-    secretHash: text('secret_hash').notNull(),
-    label: text('label').notNull(),
-    createdAt,
-    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
-    lastUsedAt: timestamp('last_used_at', { withTimezone: true, mode: 'date' }),
-    revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),
-  },
-  (table) => [
-    uniqueIndex('approver_credentials_secret_uidx').on(table.secretHash),
-    index('approver_credentials_user_idx').on(table.userId, table.createdAt),
-  ],
-);
-
-/** A pending request from a machine to become an approver, decided in a browser session. */
-export const approverLinks = pgTable(
-  'approver_links',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    /** Short code the person compares in the browser; normalized, no separators. */
-    userCode: text('user_code').notNull(),
-    pollHash: text('poll_hash').notNull(),
-    clientLabel: text('client_label').notNull(),
-    state: text('state').notNull().default('pending'),
-    userId: text('user_id').references(() => userTable.id, { onDelete: 'cascade' }),
-    createdAt,
-    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
-    decidedAt: timestamp('decided_at', { withTimezone: true, mode: 'date' }),
-  },
-  (table) => [
-    uniqueIndex('approver_links_open_code_uidx')
-      .on(table.userCode)
-      .where(sql`${table.state} in ('pending', 'approved')`),
-    index('approver_links_expiry_idx').on(table.expiresAt),
-    check(
-      'approver_links_state_check',
-      sql`${table.state} in ('pending', 'approved', 'denied', 'redeemed')`,
-    ),
-  ],
-);
-
 export const publicationApprovals = pgTable(
   'publication_approvals',
   {
@@ -536,12 +490,12 @@ export const publicationApprovals = pgTable(
     acknowledgedWarningCodes: jsonb('acknowledged_warning_codes').notNull(),
     policyVersion: text('policy_version').notNull(),
     decision: text('decision').notNull().default('approved'),
-    /** Records that this approval was created in a trusted browser session. */
+    /** The browser session that recorded a person's decision. Null for a delegated approval, and for decisions recorded by the retired approval device. */
     sessionId: text('session_id'),
-    /** Set instead of `sessionId` when the decision came from an approver credential. */
-    approverCredentialId: uuid('approver_credential_id').references(() => approverCredentials.id, {
-      onDelete: 'set null',
-    }),
+    /** `human` for a person's decision; `delegated` when a connection published under the owner's delegation. */
+    authorizationKind: text('authorization_kind').notNull().default('human'),
+    /** The connection's OAuth client, for a delegated approval. */
+    clientId: text('client_id'),
     expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
     consumedAt: timestamp('consumed_at', { withTimezone: true, mode: 'date' }),
     consumedByOperationId: uuid('consumed_by_operation_id'),
@@ -560,6 +514,36 @@ export const publicationApprovals = pgTable(
       .on(table.draftId)
       .where(sql`${table.consumedAt} is null and ${table.revokedAt} is null`),
     check('publication_approvals_decision_check', sql`${table.decision} in ('approved', 'denied')`),
+    check(
+      'publication_approvals_authorization_check',
+      sql`(${table.authorizationKind} = 'human' and ${table.clientId} is null) or (${table.authorizationKind} = 'delegated' and ${table.clientId} is not null)`,
+    ),
+  ],
+);
+
+/**
+ * A person's standing permission for one connection to publish their own
+ * drafts without a per-artifact approval (section 10.4). Only a browser
+ * session creates or removes it; revoking the connection deletes its consent
+ * row and with it this delegation.
+ */
+export const publicationDelegations = pgTable(
+  'publication_delegations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => userTable.id, { onDelete: 'cascade' }),
+    consentId: text('consent_id')
+      .notNull()
+      .references(() => oauthConsentTable.id, { onDelete: 'cascade' }),
+    clientId: text('client_id').notNull(),
+    enabledBySessionId: text('enabled_by_session_id').notNull(),
+    createdAt,
+  },
+  (table) => [
+    unique('publication_delegations_consent_uq').on(table.consentId),
+    index('publication_delegations_user_client_idx').on(table.userId, table.clientId),
   ],
 );
 

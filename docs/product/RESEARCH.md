@@ -290,7 +290,7 @@ Long-term funding options include transparent hardware partnerships, donations, 
 | Untrusted project code or fixtures attack the runner | Declarative MVP, limits, no tools/scripts by default; later isolated harness review |
 | Shared results reveal private work | Explicit export review, allowlist payloads, no raw prompts/logs/inventory upload |
 | Fake reports or Sybil identities inflate trust | Moderation, distinct evidence states, independent-verifier policy; do not promise elimination |
-| Browser approval adds agent-workflow friction | Keep contribution preparation/API headless; use a minimal confirmation surface; evaluate trustworthy local confirmation later |
+| Browser approval adds agent-workflow friction | Keep contribution preparation/API headless; use a minimal confirmation surface; let an owner delegate publication to one connection, labeled publicly (BACKEND_PRD ADR-014). A terminal approval device was tried and retired: it could not tell a person from an agent on the same machine |
 | Jetson curation and desktop testing look inconsistent | Separate catalog inclusion from runner support clearly |
 
 Open decisions: minimum supported runtime/client versions; exact LM Studio engine/version identification; supported isolation on each OS; initial verification criteria/reviewer staffing; stable model identity when provider metadata is incomplete; permitted native endpoints for performance instrumentation; reviewer independence and privacy; release packaging/signing and namespace ownership of the `localfirstdotsh` CLI; funding and long-term community governance.

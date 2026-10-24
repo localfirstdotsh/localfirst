@@ -18,8 +18,6 @@ export interface Keychain {
 
 /** Account name for a bearer token scoped to one registry or runtime origin. */
 export const registryAccount = (origin: string) => `registry:${origin}`;
-/** Account name for the approval credential of one registry; kept apart from the agent-class token. */
-export const approverAccount = (origin: string) => `approver:${origin}`;
 export const runtimeAccount = (origin: string) => `runtime:${origin}`;
 
 const hex = (text: string) => Buffer.from(text, 'utf8').toString('hex');

@@ -6,3 +6,4 @@
 @media (min-width: 900px) {
   .review-grid { grid-template-columns: minmax(0, 1.1fr) minmax(var(--width-definition-value), 1fr); }
 }
+.review-delegate { padding-top: var(--space-4); border-top: var(--space-px) solid var(--border); }

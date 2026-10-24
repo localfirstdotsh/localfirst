@@ -27,18 +27,6 @@ export type Actor =
       operatorRoles: OperatorRole[];
       scopes: Set<string>;
       audience: string;
-    }
-  | {
-      /**
-       * A person's machine-level approval credential. It carries no scopes and
-       * is accepted only on the routes that record or read a publication
-       * decision (see `approverRouteAllowed`).
-       */
-      kind: 'approver';
-      userId: string;
-      credentialId: string;
-      operatorRoles: OperatorRole[];
-      scopes: Set<string>;
     };
 
 export interface AppVariables {
@@ -71,8 +59,6 @@ export function actorKey(actor: Actor): string {
       return `user:${actor.userId}`;
     case 'token':
       return `user:${actor.userId}:client:${actor.clientId}`;
-    case 'approver':
-      return `user:${actor.userId}:approver:${actor.credentialId}`;
   }
 }
 
