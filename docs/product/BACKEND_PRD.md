@@ -492,7 +492,7 @@ The runner's default is no upload, no telemetry, no automatic downloads, no arbi
 The npm package and executable are named `localfirstdotsh`. The MCP setup entry point is `npx localfirstdotsh mcp add`. These commands are design contracts for the future open-source package, not currently executable product commands:
 
 ```text
-localfirstdotsh mcp add --client <tested-client>
+localfirstdotsh mcp add [--client <tested-client>] [--registry <origin>]   # asks for the client in a terminal; registry defaults to https://localfirst.sh
 localfirstdotsh project export <project-id> --version <version-id>   # anonymous; writes a digest-verified bundle
 localfirstdotsh runtime discover --runtime ollama
 localfirstdotsh runtime discover --runtime lmstudio

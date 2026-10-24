@@ -58,12 +58,13 @@ describe('localfirst agent skill', () => {
     expect(() => readFileSync(join(skillDir, 'references', '..', '..', '..', 'docs', 'operations', 'CLIENT_MATRIX.md'))).not.toThrow();
   });
 
-  it('does not advertise the unpublished `mcp add` command as working', () => {
-    expect(all).toMatch(/`localfirstdotsh mcp add` is not available yet/);
-    // Publishable metadata does not mean a release exists on npm. Keep the
-    // package's release notice and the agent guidance consistent until the
-    // verified public release updates both together.
+  it('offers `mcp add` only through the published beta package', () => {
+    // The CLI is on npm under the `beta` dist-tag. Every `mcp add` the skill offers runs
+    // that prerelease, and the package README documents the same channel.
+    const offers = all.split('\n').filter((line) => /localfirstdotsh(@\S+)? mcp add/.test(line));
+    expect(offers.length).toBeGreaterThan(0);
+    for (const line of offers) expect(line).toContain('npx localfirstdotsh@beta mcp add');
     const packageReadme = readFileSync(join(root, 'packages', 'runner', 'README.md'), 'utf8');
-    expect(packageReadme).toContain('being prepared for its first npm release');
+    expect(packageReadme).toContain('published under the `beta` dist-tag');
   });
 });
