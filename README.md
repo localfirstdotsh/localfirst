@@ -18,6 +18,7 @@ dist-tag and stable versions under `latest`:
 
 ```sh
 npx localfirstdotsh@beta --help
+npx localfirstdotsh@beta mcp add    # asks which client; registry defaults to https://localfirst.sh
 npx localfirstdotsh@beta mcp add --client claude-code --registry <registry-origin>
 npx localfirstdotsh --help    # after the first stable release
 ```

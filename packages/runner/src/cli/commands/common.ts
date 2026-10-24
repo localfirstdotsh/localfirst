@@ -27,9 +27,12 @@ export function parse<const O extends OptionSpec>(argv: string[], options: O, po
 
 export const str = (value: unknown): string | undefined => (typeof value === 'string' ? value : undefined);
 
-/** The registry origin: `--registry` or `LOCALFIRST_REGISTRY`. There is no built-in default. */
-export function registryOrigin(env: CliEnv, flag: string | undefined): string {
-  const value = flag ?? env.vars.LOCALFIRST_REGISTRY;
+/**
+ * The registry origin: `--registry`, then `LOCALFIRST_REGISTRY`, then `fallback`. Only
+ * commands that pass a fallback have a default; the rest require an explicit registry.
+ */
+export function registryOrigin(env: CliEnv, flag: string | undefined, fallback?: string): string {
+  const value = flag ?? env.vars.LOCALFIRST_REGISTRY ?? fallback;
   if (!value) {
     throw new CliError('No registry configured. Pass --registry <url> or set LOCALFIRST_REGISTRY.', EXIT.usage);
   }

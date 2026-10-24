@@ -37,7 +37,14 @@ use the website's native configuration guides.
 
 ## Connect a client
 
-Use the origin of the Localfirst registry you want to connect to:
+In a terminal, run it with no flags and pick your application from the list (clients
+found on your PATH are marked):
+
+```sh
+npx localfirstdotsh@beta mcp add
+```
+
+Or name the client, and the registry if it is not the public one:
 
 ```sh
 npx localfirstdotsh@beta mcp add --client claude-code --registry <registry-origin>
@@ -54,8 +61,10 @@ npx localfirstdotsh@beta mcp add --client chatgpt --registry <registry-origin>
 ```
 
 The registry origin must use HTTPS, or HTTP on loopback for local development.
-There is no built-in registry default. Set `LOCALFIRST_REGISTRY` to avoid passing
-`--registry` every time.
+`mcp add` uses `--registry`, then `LOCALFIRST_REGISTRY`, then the public registry,
+`https://localfirst.sh`. Every other command that talks to a registry requires
+`--registry` or `LOCALFIRST_REGISTRY`. Scripts and `--print` must pass `--client`: the
+menu appears only in an interactive terminal.
 
 The CLI reads the registry's MCP metadata and shows the exact native client
 command. It changes configuration only after you type `yes` in an interactive
