@@ -41,6 +41,10 @@ export function scriptedIo(options: { tty: boolean; answers?: string[]; secret?:
       io.questions.push(question);
       return answers.shift() === 'yes';
     },
+    readLine: async (question) => {
+      io.questions.push(question);
+      return answers.shift()?.trim() ?? '';
+    },
     readSecret: async () => {
       if (!options.tty) throw refusal('Reading a secret needs an interactive terminal.');
       return options.secret ?? '';

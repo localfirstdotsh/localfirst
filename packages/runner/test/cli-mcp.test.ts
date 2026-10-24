@@ -1,8 +1,12 @@
+import { chmod, mkdtemp, writeFile } from 'node:fs/promises';
 import { createServer, type RequestListener } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { runCli } from '../src/cli/main.js';
 import { EXIT } from '../src/cli/errors.js';
+import { DEFAULT_REGISTRY } from '../src/cli/commands/mcp.js';
 import { makeHarness, startFakeRegistry, type FakeRegistry } from './support/cli-harness.js';
 
 let registry: FakeRegistry;
@@ -145,6 +149,61 @@ describe('mcp add', () => {
     expect(await usage('--client', 'claude-code', '--scope', 'global', '--print')).toBe(EXIT.usage);
     expect(await usage('--client', 'codex', '--scope', 'user', '--print')).toBe(EXIT.usage);
     expect(h.spawned).toEqual([]);
+  });
+
+  it('asks which application to set up when --client is omitted, marking clients found on PATH', async () => {
+    const bin = await mkdtemp(join(tmpdir(), 'lf-path-'));
+    await writeFile(join(bin, 'codex'), '#!/bin/sh\n');
+    await chmod(join(bin, 'codex'), 0o755);
+    const h = await makeHarness({ answers: ['2', 'yes'], runInteractive: () => ok, vars: { PATH: bin } });
+    expect(await runCli(['mcp', 'add', '--registry', registry.origin], h.env)).toBe(EXIT.ok);
+    const out = h.io.text();
+    expect(out).toContain('Which application should connect to Localfirst?');
+    expect(out).toContain(' 2. Codex CLI (`codex` found)');
+    expect(out).toContain(' 1. Claude Code\n');
+    expect(out).toContain('11. ChatGPT');
+    expect(h.io.questions[0]).toBe('Enter 1-11: ');
+    expect(h.spawned).toEqual([['codex', 'mcp', 'add', 'localfirst', '--url', `${registry.origin}/mcp`]]);
+  });
+
+  it('accepts a client key at the menu and changes nothing for any other answer', async () => {
+    const named = await makeHarness({ answers: ['Cursor'], runInteractive: () => ok });
+    expect(await runCli(['mcp', 'add', '--registry', registry.origin], named.env)).toBe(EXIT.ok);
+    expect(named.io.text()).toContain('~/.cursor/mcp.json');
+    for (const answer of ['', '0', '12', 'zed']) {
+      const h = await makeHarness({ answers: [answer], runInteractive: () => ok });
+      expect(await runCli(['mcp', 'add', '--registry', registry.origin], h.env)).toBe(EXIT.refused);
+      expect(h.io.text()).toContain('No application chosen. Nothing was changed.');
+      expect(h.fetched).toEqual([]);
+      expect(h.spawned).toEqual([]);
+    }
+  });
+
+  it('never shows the menu to a script or with --print', async () => {
+    const printing = await makeHarness({ answers: ['1'] });
+    expect(await runCli(['mcp', 'add', '--registry', registry.origin, '--print'], printing.env)).toBe(EXIT.usage);
+    expect(printing.io.questions).toEqual([]);
+    expect(printing.io.stderr.join('')).toContain('Pass --client');
+  });
+
+  it('defaults to the public registry, and LOCALFIRST_REGISTRY overrides it', async () => {
+    const stub = (h: Awaited<ReturnType<typeof makeHarness>>) => {
+      h.env.fetch = async (input) => {
+        h.fetched.push(String(input));
+        const origin = new URL(String(input)).origin;
+        return new Response(JSON.stringify({ resource: `${origin}/mcp` }), { headers: { 'content-type': 'application/json' } });
+      };
+    };
+    const byDefault = await makeHarness({ tty: false });
+    stub(byDefault);
+    expect(await runCli(['mcp', 'add', '--client', 'claude-code', '--print'], byDefault.env)).toBe(EXIT.ok);
+    expect(byDefault.fetched).toEqual([`${DEFAULT_REGISTRY}/.well-known/oauth-protected-resource/mcp`]);
+    expect(byDefault.io.text()).toBe(`claude mcp add --transport http --scope user localfirst ${DEFAULT_REGISTRY}/mcp\n`);
+
+    const fromEnv = await makeHarness({ tty: false, vars: { LOCALFIRST_REGISTRY: 'https://registry.example' } });
+    stub(fromEnv);
+    expect(await runCli(['mcp', 'add', '--client', 'codex', '--print'], fromEnv.env)).toBe(EXIT.ok);
+    expect(fromEnv.fetched).toEqual(['https://registry.example/.well-known/oauth-protected-resource/mcp']);
   });
 
   it('reports a missing client binary and a refused change honestly', async () => {

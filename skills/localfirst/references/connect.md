@@ -20,5 +20,7 @@ Tested clients and what each result actually proves are recorded in
 [docs/operations/CLIENT_MATRIX.md](../../../docs/operations/CLIENT_MATRIX.md). A client not listed there
 is untested; say so rather than claiming it works.
 
-`localfirstdotsh mcp add` is not available yet. Configure the client with its own MCP command, using
-the registry's `/mcp` URL and the client's HTTP transport.
+The person can run `npx localfirstdotsh@beta mcp add` in their own terminal: it asks which client,
+shows the exact registration command, and runs it only after they type `yes`. It defaults to the
+public registry; add `--registry <origin>` for any other. Otherwise, configure the client with its
+own MCP command, using the registry's `/mcp` URL and the client's HTTP transport.
