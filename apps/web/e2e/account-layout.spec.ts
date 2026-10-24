@@ -48,9 +48,19 @@ test.describe('account area layout', () => {
     expect(Math.round(footer.y + footer.height)).toBe(1400);
   });
 
-  test('signs out through the auth service and returns home, and reports a failure', async ({ page }) => {
+  test('signs out through the auth service and returns home, and reports a failure', async ({ page }, info) => {
+    test.skip(info.project.name === 'phone', 'the dropdown is the inline list in the phone menu');
     await page.goto('/account/projects');
-    const signOut = page.getByRole('navigation', { name: 'Account' }).getByRole('button', { name: 'Sign out' });
+    const menu = page.getByRole('button', { name: /^Account menu/ });
+    const signOut = page.getByRole('navigation', { name: 'Primary' }).getByRole('button', { name: 'Sign out' });
+    await expect(signOut).toBeHidden();
+    await menu.click();
+    await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Account', exact: true })).toHaveAttribute('href', '/account/projects');
+    for (const name of ['My projects', 'Connections', 'Danger zone']) await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(signOut).toBeHidden();
+    await expect(menu).toBeFocused();
+    await menu.click();
     await page.route('**/api/auth/sign-out', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: { message: 'Fixture sign-out failure' } }) }));
     await signOut.click();
     await expect(page.getByRole('alert').filter({ hasText: 'Fixture sign-out failure' })).toBeVisible();
