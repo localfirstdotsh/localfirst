@@ -68,12 +68,12 @@ test.describe('account area layout', () => {
   test('signs out through the auth service and returns home, and reports a failure', async ({ page }, info) => {
     test.skip(info.project.name === 'phone', 'the dropdown is the inline list in the phone menu');
     await page.goto('/account/projects');
-    const menu = page.getByRole('button', { name: /^Account/ });
+    const menu = page.getByRole('button', { name: /^Account menu/ });
     const signOut = page.getByRole('navigation', { name: 'Primary' }).getByRole('button', { name: 'Sign out' });
     await expect(signOut).toBeHidden();
     await menu.click();
-    for (const name of ['My projects', 'Connections', 'Approval devices']) await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name })).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Danger zone' })).toHaveCount(0);
+    await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name: 'Account', exact: true })).toHaveAttribute('href', '/account/projects');
+    for (const name of ['My projects', 'Connections', 'Approval devices', 'Danger zone']) await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link', { name })).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(signOut).toBeHidden();
     await expect(menu).toBeFocused();
