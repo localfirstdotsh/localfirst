@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from '../ui/Icon';
-import { SignOutButton } from '../composites/SignOutButton';
 import type { AccountSession } from '../../lib/account-session';
+import { AccountMenu } from './AccountMenu';
 
 const LINKS = [
   { href: '/docs', label: 'Docs' },
@@ -64,9 +63,8 @@ export function NavLinks({ account }: { account: AccountSession | null }) {
           return <Link key={link.href} href={link.href} aria-current={active ? 'page' : undefined} onClick={() => setOpen(false)}>{link.label}</Link>;
         })}
         {account
-          ? <Link href="/account/projects" className="nav-account" aria-current={pathname.startsWith('/account') ? 'page' : undefined} onClick={() => setOpen(false)}><Icon name="account" />Account{account.handle && <span className="visually-hidden"> (signed in as {account.handle})</span>}</Link>
+          ? <AccountMenu account={account} onNavigate={() => setOpen(false)} />
           : pathname !== '/sign-in' && <a href="/sign-in" className="button button-small nav-sign-in" onClick={() => setOpen(false)}>Sign in</a>}
-        {account && !pathname.startsWith('/account') && <SignOutButton authBase={account.authBase} className="nav-sign-out">Sign out</SignOutButton>}
       </nav>
     </>
   );

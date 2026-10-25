@@ -1,17 +1,9 @@
 /* Hero composition adapted from RidwanG206/localfirst-web/app/page.tsx and Hero.tsx. */
 body:has(.landing) { --landing-header-height: 78px; background: var(--landing-lime); }
+/* The floating header keeps the dark theme over the lime hero, so its edge stays defined. */
 body:has(.landing) > .site-header {
-  --fg: var(--landing-ink);
-  --fg-muted: var(--landing-muted);
-  --accent: var(--landing-ink);
-  --focus: var(--landing-ink);
-  --control-border: var(--landing-ink);
-  --hover: var(--landing-dot);
-  --border: var(--landing-dot);
-  --header-surface: color-mix(in srgb, var(--landing-paper) 32%, transparent);
-  --header-border: rgb(255 255 255 / .45);
-  --header-action-text: var(--landing-paper);
-  color-scheme: light;
+  --header-surface: color-mix(in srgb, var(--landing-ink) 95%, transparent);
+  --header-border: rgb(255 255 255 / .14);
 }
 
 body:has(.landing) > .site-footer { display: none; }
