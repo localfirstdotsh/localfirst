@@ -146,10 +146,12 @@ projects:
               # no change per release; drop it when the first stable version takes `latest`.
               # Every command targets this environment's public origin (LOCALFIRST_PUBLIC_API_URL).
               # LOCALFIRST_CLI_VERSION is unset: nothing displays it, and it would go stale.
+              # The homepage command leaves out --client: the CLI asks which application to connect.
+              # The per-client commands on /docs/connect keep it.
               - key: LOCALFIRST_CLI_RELEASED
                 value: 'true'
               - key: LOCALFIRST_CLI_SETUP_COMMAND
-                value: npx localfirstdotsh@beta mcp add --client claude-code --registry https://staging.localfirst.sh
+                value: npx localfirstdotsh@beta mcp add --registry https://staging.localfirst.sh
               - key: LOCALFIRST_TESTED_CLIENTS
                 value: '[{"id":"claude-code","label":"Claude Code","command":"npx localfirstdotsh@beta mcp add --client claude-code --registry https://staging.localfirst.sh"},{"id":"codex","label":"Codex CLI","command":"npx localfirstdotsh@beta mcp add --client codex --registry https://staging.localfirst.sh"},{"id":"gemini-cli","label":"Gemini CLI","command":"npx localfirstdotsh@beta mcp add --client gemini-cli --registry https://staging.localfirst.sh"}]'
 
