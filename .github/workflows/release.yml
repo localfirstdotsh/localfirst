@@ -108,8 +108,9 @@ jobs:
       - name: Publish
         run: npm publish "$TARBALL" --tag "$DIST_TAG" --access public --provenance
       - name: Verify on the registry
+        # npm can take minutes to list a new version (0.1.0-beta.1 took about 4.5), so wait up to 10.
         run: |
-          for attempt in 1 2 3 4 5 6; do
+          for attempt in $(seq 1 60); do
             if [ "$(npm view "localfirstdotsh@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then break; fi
             sleep 10
           done
