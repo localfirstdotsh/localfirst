@@ -1,11 +1,15 @@
+import { access, constants } from 'node:fs/promises';
+import { delimiter, join } from 'node:path';
 import type { CliEnv } from '../context.js';
 import { CliError, EXIT, refusal, usageError } from '../errors.js';
 import { requireTty } from '../io.js';
 import { parse, registryOrigin, str } from './common.js';
 
 /**
- * `mcp add --client <client>`: register the registry's hosted MCP server with
- * an agent application through that application's own CLI.
+ * `mcp add [--client <client>]`: register the registry's hosted MCP server with
+ * an agent application through that application's own CLI. Without `--client`,
+ * an interactive terminal is asked which application; without `--registry` or
+ * `LOCALFIRST_REGISTRY`, the public registry is used.
  *
  * Only clients whose native `mcp add` was exercised are offered. The MCP URL
  * comes from the registry's protected-resource metadata, never from a guess.
@@ -143,6 +147,39 @@ const SNIPPETS: Record<string, SnippetProfile> = {
 export const MCP_CLIENTS = [...Object.keys(CLIENTS), ...Object.keys(SNIPPETS), ...Object.keys(GUIDES)];
 const NAME = /^[a-z0-9][a-z0-9-]{0,39}$/;
 
+/** The public registry, used by `mcp add` when neither `--registry` nor `LOCALFIRST_REGISTRY` is set. */
+export const DEFAULT_REGISTRY = 'https://localfirst.sh';
+
+/** Whether `program` is an executable on PATH. It only labels the menu; nothing is run. */
+async function onPath(env: CliEnv, program: string): Promise<boolean> {
+  for (const dir of (env.vars.PATH ?? '').split(delimiter)) {
+    if (!dir) continue;
+    try {
+      await access(join(dir, program), constants.X_OK);
+      return true;
+    } catch {
+      // Not in this directory.
+    }
+  }
+  return false;
+}
+
+/** Ask which application to set up; null when the answer names none. */
+async function chooseClient(env: CliEnv): Promise<string | null> {
+  const lines = await Promise.all(
+    MCP_CLIENTS.map(async (key, index) => {
+      const program = CLIENTS[key]?.program;
+      const found = program !== undefined && (await onPath(env, program));
+      const label = (CLIENTS[key] ?? SNIPPETS[key] ?? GUIDES[key])!.label;
+      return `  ${String(index + 1).padStart(2)}. ${label}${found ? ` (\`${program}\` found)` : ''}`;
+    }),
+  );
+  env.io.out(['Which application should connect to Localfirst?', ...lines, ''].join('\n') + '\n');
+  const answer = (await env.io.readLine(`Enter 1-${MCP_CLIENTS.length}: `)).toLowerCase();
+  if (MCP_CLIENTS.includes(answer)) return answer;
+  return /^\d+$/.test(answer) ? (MCP_CLIENTS[Number(answer) - 1] ?? null) : null;
+}
+
 const MAX_METADATA_BYTES = 64 * 1024;
 
 /** Parse a small JSON body, or null if it is oversized, interrupted, or not JSON. */
@@ -213,16 +250,25 @@ export async function mcpAdd(env: CliEnv, argv: string[]): Promise<number> {
     },
     { min: 0, max: 0 },
   );
-  const clientKey = str(values.client);
-  if (!clientKey) throw usageError(`Pass --client ${MCP_CLIENTS.join('|')}.`);
+  const name = str(values.name) ?? 'localfirst';
+  if (!NAME.test(name)) throw usageError('--name must be 1-40 lowercase letters, digits, or hyphens.');
+  let clientKey = str(values.client);
+  if (!clientKey) {
+    // A script names its client; only a person at a terminal gets the menu.
+    if (!env.io.isTTY || values.print === true) throw usageError(`Pass --client ${MCP_CLIENTS.join('|')}.`);
+    const chosen = await chooseClient(env);
+    if (!chosen) {
+      env.io.out('No application chosen. Nothing was changed.\n');
+      return EXIT.refused;
+    }
+    clientKey = chosen;
+  }
   const snippet = SNIPPETS[clientKey];
   const guide = GUIDES[clientKey];
   const client = CLIENTS[clientKey];
   if (!client && !snippet && !guide) {
     throw usageError(`"${clientKey}" is not a tested client. Supported: ${MCP_CLIENTS.join(', ')}.`);
   }
-  const name = str(values.name) ?? 'localfirst';
-  if (!NAME.test(name)) throw usageError('--name must be 1-40 lowercase letters, digits, or hyphens.');
   const scope = str(values.scope);
   if (snippet && scope !== undefined) throw usageError(`${snippet.label} has no --scope option; choose the file yourself.`);
   if (guide && scope !== undefined) throw usageError(`${guide.label} has no --scope option.`);
@@ -230,7 +276,7 @@ export async function mcpAdd(env: CliEnv, argv: string[]): Promise<number> {
     throw usageError(client.scopes ? `--scope must be one of ${client.scopes.join(', ')}.` : `${client.label} has no --scope option.`);
   }
 
-  const origin = registryOrigin(env, str(values.registry));
+  const origin = registryOrigin(env, str(values.registry), DEFAULT_REGISTRY);
   const url = await mcpResource(env, origin);
   if (guide) {
     env.io.out(

@@ -10,6 +10,8 @@ export interface Io {
   err(text: string): void;
   /** Ask for an exact `yes`. Anything else, or EOF, is a no. */
   ask(question: string): Promise<boolean>;
+  /** Read one trimmed line; EOF is an empty answer. */
+  readLine(question: string): Promise<string>;
   /** Read a secret without echoing it. */
   readSecret(prompt: string): Promise<string>;
 }
@@ -52,24 +54,25 @@ export function createTerminalIo(
   stderr: NodeJS.WriteStream = process.stderr,
 ): Io {
   const isTTY = Boolean(stdin.isTTY && stdout.isTTY);
+  const readLine = (question: string) =>
+    new Promise<string>((resolve) => {
+      const rl = createInterface({ input: stdin, output: stdout, terminal: isTTY });
+      let answered = false;
+      rl.question(question, (answer) => {
+        answered = true;
+        rl.close();
+        resolve(answer.trim());
+      });
+      rl.on('close', () => {
+        if (!answered) resolve('');
+      });
+    });
   return {
     isTTY,
     out: (text) => void stdout.write(text),
     err: (text) => void stderr.write(text),
-    ask(question) {
-      return new Promise((resolve) => {
-        const rl = createInterface({ input: stdin, output: stdout, terminal: isTTY });
-        let answered = false;
-        rl.question(question, (answer) => {
-          answered = true;
-          rl.close();
-          resolve(answer.trim().toLowerCase() === 'yes');
-        });
-        rl.on('close', () => {
-          if (!answered) resolve(false);
-        });
-      });
-    },
+    ask: async (question) => (await readLine(question)).toLowerCase() === 'yes',
+    readLine,
     readSecret(prompt) {
       return new Promise((resolve, reject) => {
         if (!isTTY) return reject(refusal('Reading a secret needs an interactive terminal.'));

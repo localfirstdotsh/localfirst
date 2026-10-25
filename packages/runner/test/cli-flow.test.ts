@@ -91,9 +91,10 @@ describe('global behaviour', () => {
     const root = await newRoot();
     const help = (await cli(root, ['--help'])).out;
     expect(help).toContain('localfirstdotsh');
-    expect(help).toContain('mcp add --client claude-code|codex|github-copilot|gemini-cli|cursor|vscode|opencode|windsurf|cline|claude-desktop|chatgpt');
+    expect(help).toContain('mcp add [--client claude-code|codex|github-copilot|gemini-cli|cursor|vscode|opencode|windsurf|cline|claude-desktop|chatgpt]');
     expect((await cli(root, ['--version'])).out).toMatch(/^\d+\.\d+\.\d+/);
-    const mcp = await cli(root, ['mcp', 'add']);
+    // Without a terminal there is no menu, so the client must be named.
+    const mcp = await cli(root, ['mcp', 'add'], { tty: false });
     expect(mcp.code).toBe(2);
     expect(mcp.err).toContain('--client claude-code|codex|github-copilot|gemini-cli|cursor|vscode|opencode|windsurf|cline|claude-desktop|chatgpt');
     expect((await cli(root, ['nope'])).code).toBe(2);

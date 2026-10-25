@@ -15,7 +15,7 @@ import { RUNNER_VERSION } from './version.js';
 export const HELP = `localfirstdotsh ${RUNNER_VERSION}
 
 Usage:
-  localfirstdotsh mcp add --client ${MCP_CLIENTS.join('|')} [--registry <url>] [--name <name>] [--scope <scope>] [--print]
+  localfirstdotsh mcp add [--client ${MCP_CLIENTS.join('|')}] [--registry <url>] [--name <name>] [--scope <scope>] [--print]
   localfirstdotsh environment samples
   localfirstdotsh environment prepare <project-id> --version <id> --environment <key> --out <new-dir>
   localfirstdotsh environment prepare --sample bakery|florist|print-shop|bike-repair|pet-grooming --out <new-dir>

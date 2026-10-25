@@ -75,7 +75,6 @@ body:has(.landing) > .skip-link { background: var(--landing-ink); color: var(--l
 .landing-command { margin-top: 28px; }
 .landing .command-line { gap: 10px; border-radius: 12px; padding: 10px 10px 10px 16px; }
 .landing .command-prompt { color: var(--landing-lime); opacity: .6; }
-.landing .command-word { display: inline; }
 .landing .command-line code { font-size: 12px; line-height: 1.6; }
 .landing .command-line .button { min-width: 44px; min-height: 44px; flex-shrink: 0; border: 1px solid var(--landing-lime); border-radius: 999px; color: var(--landing-lime); background: transparent; }
 .landing .command-line .button:hover { background: var(--landing-lime); color: var(--landing-ink); }
