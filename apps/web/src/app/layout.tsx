@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: 'Localfirst.sh — The home of local AI', template: '%s · Localfirst.sh' },
-  description: 'Build, test and share AI projects that run on your hardware.',
+  title: { default: 'Localfirst.sh — Discover what you can do with AI', template: '%s · Localfirst.sh' },
+  description: 'Find, try, and share AI projects for everyday life, small businesses, and your community.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
