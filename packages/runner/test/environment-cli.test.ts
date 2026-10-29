@@ -1,7 +1,7 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
-import { SAMPLE_ENVIRONMENTS, workflowLocalReportSchema, workflowPlanSchema, anyTestResultSubmissionSchema } from '@localfirst/contracts';
+import { SAMPLE_ENVIRONMENTS, BUSINESS_TEAMS, businessTeamCases, workflowLocalReportSchema, workflowPlanSchema, anyTestResultSubmissionSchema } from '@localfirst/contracts';
 import { runCli } from '../src/cli/main.js';
 import { makeHarness } from './support/cli-harness.js';
 import { startFakeOllama, LOCAL, type FakeOllama } from './support/fake-ollama.js';
@@ -30,6 +30,35 @@ async function planned(root: string) {
   return { h, path, plan: workflowPlanSchema.parse(file.plan) };
 }
 describe('local environment workflow', () => {
+  it('prepares and runs all five universal teams through CLI plans and private reports with scripted inference', async () => {
+    const h = await makeHarness({ answers: Array(5).fill('yes') });
+    expect(await runCli(['environment', 'samples'], h.env)).toBe(0);
+    runtime = await startFakeOllama();
+    for (const team of BUSINESS_TEAMS) {
+      expect(h.io.text()).toContain(team.key + ':');
+      expect(await runCli(['environment', 'prepare', '--sample', team.key, '--out', team.key], h.env), h.io.stderr.join('')).toBe(0);
+      const expected = new Map(businessTeamCases(team.key).map(c => [c.input.record.id, c.needs_information]));
+      runtime.chat = body => {
+        const { record } = JSON.parse(body.messages[1].content);
+        return { json: { model: body.model, message: { role: 'assistant', content: JSON.stringify({ source_id: record.id, business_name: record.business_name, needs_information: expected.get(record.id), text: 'Scripted draft for owner review.', questions: [], review_required: true, delivery_state: 'draft_only' }) }, done: true } };
+      };
+      const planner = await makeHarness({ root: h.root, answers: ['yes'] });
+      const before = runtime.requests.filter(r => r.path === '/api/chat').length;
+      expect(await runCli(['environment', 'plan', team.key, '--runtime', 'ollama', '--model', LOCAL, '--endpoint', runtime.url], planner.env), planner.io.stderr.join('')).toBe(0);
+      expect(runtime.requests.filter(r => r.path === '/api/chat')).toHaveLength(before);
+      const path = /Plan saved: (.+)\n/.exec(planner.io.text())![1]!;
+      const file = JSON.parse(await readFile(path, 'utf8'));
+      expect(file.plan.effects.inference_requests).toBe(40);
+      expect(file.plan.bindings).toHaveLength(4);
+      const executor = await makeHarness({ root: h.root, answers: ['yes'] });
+      expect(await runCli(['environment', 'run', path, '--offline'], executor.env), executor.io.stderr.join('')).toBe(0);
+      const reportPath = /Private report: (.+)\n/.exec(executor.io.text())![1]!;
+      const report = workflowLocalReportSchema.parse(JSON.parse(await readFile(reportPath, 'utf8')));
+      expect(report.run.cases.map(c => c.outcome)).toEqual(Array(8).fill('pass'));
+      expect(runtime.requests.filter(r => r.path === '/api/chat')).toHaveLength(before + 40);
+      expect(h.fetched).toHaveLength(0);
+    }
+  });
   it('lists five samples without runtime access and prepares each as a distinct local bundle', async () => {
     const h = await makeHarness({ answers: Array(5).fill('yes') });
     expect(await runCli(['environment', 'samples'], h.env)).toBe(0);

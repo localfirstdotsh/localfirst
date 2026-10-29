@@ -18,7 +18,7 @@ Usage:
   localfirstdotsh mcp add [--client ${MCP_CLIENTS.join('|')}] [--registry <url>] [--name <name>] [--scope <scope>] [--print]
   localfirstdotsh environment samples
   localfirstdotsh environment prepare <project-id> --version <id> --environment <key> --out <new-dir>
-  localfirstdotsh environment prepare --sample bakery|florist|print-shop|bike-repair|pet-grooming --out <new-dir>
+  localfirstdotsh environment prepare --sample <key-from-environment-samples> --out <new-dir>
   localfirstdotsh environment plan <workspace> --runtime ollama|lmstudio --model <id> [--framework <artifact>] [--input <private-json>] [--data <private-data-json>]
   localfirstdotsh environment run <plan-file> [--offline]
   localfirstdotsh environment remove <unchanged-prepared-workspace>

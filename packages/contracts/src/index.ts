@@ -26,6 +26,7 @@ export * from './environment/bakery.js';
 export * from './environment/examples.js';
 export * from './environment/remix.js';
 export * from './environment/replenishment.js';
+export * from './environment/business-teams.js';
 export * from './environment/local.js';
 export * from './environment/shared.js';
 export { projectSpecV2Schema, projectSpecV3Schema } from './project/schema.js';

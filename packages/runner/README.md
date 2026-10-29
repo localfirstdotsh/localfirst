@@ -15,6 +15,18 @@ published under the `beta` dist-tag; run one without installing:
 npx localfirstdotsh@beta --help
 ```
 
+The updated source runner includes five reusable business teams: `sales`,
+`marketing`, `customer-support`, `operations`, and `finance-admin`. Use
+`environment samples` to list all available templates, then
+`environment prepare --sample sales --out <new-directory>` to inspect one.
+Each has a chief of staff and three specialists, with five fixed stages from
+brief to owner handoff, eight fictional fixtures, and private business input via
+`environment plan ... --input <private-json>`. See the prepared `PROJECT.md` for
+the input shape. Outputs stay drafts; no messages, accounting entries or other
+business actions are executed. The new sample keys need the updated source runner
+until a new npm release includes them. Exported bundles are compatible with
+beta.1 via `environment prepare --bundle <team-directory> --out <new-directory>`.
+
 Pin an exact version (`npx localfirstdotsh@0.1.0-beta.0 ...`) wherever you need
 repeatable behavior. Once 0.1.0 is released, `npx localfirstdotsh` runs the stable
 version.

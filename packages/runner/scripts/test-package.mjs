@@ -81,6 +81,11 @@ try {
   assert.equal(await run(cli, ['--version']), `${manifest.version}\n`);
   const samples = await run(cli, ['environment', 'samples']);
   assert(samples.includes('bakery'), 'environment samples does not list the bundled samples');
+  for (const key of ['sales', 'marketing', 'customer-support', 'operations', 'finance-admin']) {
+    assert(samples.includes(key + ':'), `environment samples does not list the ${key} team`);
+  }
+  await run(process.execPath, ['--input-type=module', '-e',
+    "import { BUSINESS_TEAMS, businessTeamBundle, validateProjectBundle } from './node_modules/localfirstdotsh/dist/contracts/index.js'; for (const team of BUSINESS_TEAMS) { if (!validateProjectBundle(businessTeamBundle(team.key)).ok) throw new Error('Invalid installed team: ' + team.key); }"]);
   await run(process.execPath, ['--input-type=module', '-e',
     "import { compareReports } from 'localfirstdotsh'; if (typeof compareReports !== 'function') process.exit(1);"]);
   await run(process.execPath, ['--input-type=module', '-e',

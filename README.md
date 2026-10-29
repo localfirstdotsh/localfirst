@@ -126,6 +126,49 @@ an owner reviews every generated order draft. The SDK variant additionally needs
 the declared creator module, the installed pinned Node base image, and a local
 Linux Docker engine; dependency setup is a separate approved command.
 
+### Five teams for any business
+
+The source runner also includes five reusable business functions. These use supplied
+records rather than a fixed industry catalog or a provider-specific connection.
+
+| Sample key | Team | First deliverable |
+| --- | --- | --- |
+| `sales` | Chief of staff, lead analyst, proposal writer, sales reviewer | Proposal and follow-up draft |
+| `marketing` | Chief of staff, campaign strategist, content producer, brand reviewer | Campaign brief and content drafts |
+| `customer-support` | Chief of staff, case analyst, response writer, policy reviewer | Customer response and escalation note |
+| `operations` | Chief of staff, process analyst, procedure writer, dependency reviewer | Procedure and responsibility checklist |
+| `finance-admin` | Chief of staff, document coordinator, billing assistant, finance reviewer | Billing document checklist and follow-up draft |
+
+Each team follows **brief → analysis → draft → review → owner handoff**. The chief
+of staff handles the first and last stages; four roles share one installed model
+over five sequential calls. Every stage receives the original source record.
+
+```bash
+pnpm build
+node packages/runner/dist/cli/bin.js environment prepare --sample sales --out ./sales-team
+node packages/runner/dist/cli/bin.js environment plan ./sales-team --runtime ollama --model <installed-model>
+node packages/runner/dist/cli/bin.js environment run <saved-plan-path> --offline
+```
+
+Each generated `PROJECT.md` includes a private input example. To use your business
+facts, save a JSON file with `message` and `record` (`id`, `business_name`, `facts`)
+and add `--input <private-json>` when planning. Private runs stay local and do not
+establish public-fixture accuracy. The templates need an installed JSON-capable
+model with an 8192-token context; preparation and execution retain their separate
+interactive approvals.
+
+Eight fictional cases per team cover complete and missing facts, corrections,
+conflicts, external-action requests, instruction injection, a different business,
+and empty records. The runner enforces matching source IDs and business names,
+`review_required: true`, and `delivery_state: draft_only`. These checks bind source
+identity and draft status; prose accuracy and usefulness still require owner
+review. Finance Administration organizes supplied documents and drafts messages;
+it does not calculate balances, reconcile books or provide tax advice. The teams
+have no live business connections, persistent memory or background monitoring.
+The new sample keys require the updated source runner until a new package is
+released. Exported team bundles also work with npm beta.1 through
+`environment prepare --bundle <team-directory> --out <new-directory>`.
+
 ### Try a workflow remix
 
 `bakery-holiday` derives from the original bakery sample. It preserves the

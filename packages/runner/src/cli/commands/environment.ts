@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile, lstat, unlink, rmdir } from 'node:fs/promis
 import { randomUUID } from 'node:crypto';
 import { join, resolve, dirname } from 'node:path';
 import {
-  sampleBundle, SAMPLE_ENVIRONMENTS, BAKERY_HOLIDAY_REMIX, bakeryHolidayBundle, STOCK_REPLENISHMENT_SAMPLE, stockReplenishmentBundle, digestOf, digestOfBytes, boundedJson, workflowPlanSchema, sealWorkflowPlan, validateWorkflowPlan,
+  sampleBundle, SAMPLE_ENVIRONMENTS, BAKERY_HOLIDAY_REMIX, bakeryHolidayBundle, STOCK_REPLENISHMENT_SAMPLE, stockReplenishmentBundle, BUSINESS_TEAMS, businessTeamBundle, digestOf, digestOfBytes, boundedJson, workflowPlanSchema, sealWorkflowPlan, validateWorkflowPlan,
   workflowLocalReportSchema, workflowDigests, type WorkflowPlan,
 } from '@localfirst/contracts';
 import { LocalBundleSource, validateBundle, writeBundleDir, type BundleMeta } from '../bundle.js';
@@ -22,6 +22,7 @@ import { preparedFrameworkSchema, DockerWorkflowScheduler, localDockerEndpoint }
 
 const PLAN_FILE = 'localfirst/workflow-plan-file/v0.1';
 const bundledSamples = [
+  ...BUSINESS_TEAMS.map(team => ({ ...team, load: () => businessTeamBundle(team.key) })),
   ...SAMPLE_ENVIRONMENTS.map(sample => ({ ...sample, load: () => sampleBundle(sample.key) })),
   { ...BAKERY_HOLIDAY_REMIX, load: bakeryHolidayBundle },
   { ...STOCK_REPLENISHMENT_SAMPLE, load: stockReplenishmentBundle },
