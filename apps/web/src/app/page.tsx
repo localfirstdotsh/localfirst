@@ -17,8 +17,8 @@ export default function HomePage() {
         <p className="landing-eyebrow">Your tools · Your projects · Your machine</p>
       </div>
       <div className="landing-copy">
-        <p className="landing-lede">The home of local AI.</p>
-        <p className="landing-body">Build, test and share AI projects that run on your hardware.</p>
+        <p className="landing-lede">Discover what you can do with AI.</p>
+        <p className="landing-body">Find, try, and share AI projects for everyday life, small businesses, and your community.</p>
         <div className="landing-command">
           <CopyBlock text={command} note={setup.state === 'available'
             ? 'Run in your terminal to connect your agent. Requires Node.js 22+.'
